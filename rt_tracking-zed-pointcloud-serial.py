@@ -62,11 +62,13 @@ def main():
 
     # Create a coordinate frame
     coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.05, origin=[0, 0, 0])
+
     transformation_matrix = np.array([[1, 0, 0, 0],
                                       [0, -1, 0, 0],
                                       [0, 0, -1, 0],
                                       [0, 0, 0, 1]])
     coordinate_frame.transform(transformation_matrix)
+
     # Check if CUDA is available and set the device accordingly
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f"Using device: {device}")
@@ -97,11 +99,25 @@ def main():
     cx, cy = calibration_params.left_cam.cx, calibration_params.left_cam.cy
     img_width, img_height = calibration_params.left_cam.image_size.width, calibration_params.left_cam.image_size.height
 
-    # Define camera parameters
-    lookat = [0.0, 0.0, 0.0]  # Camera is looking at the origin
-    front = [0.0, 0.0, -1.0]  # Camera is facing along the negative z-axis
-    up = [0, 1.0, 0]  # The upward direction is along the y-axis
-    zoom = 1  # Adjust zoom to zoom in slightly
+    # Transformation matrices from camera frame to chess frame for camera 1 and camera 2
+    T_chess_cam1 = np.array([[-0.9770, 0.1087, -0.1835, 0.3060],
+                             [-0.2100, -0.6401, 0.7390, -0.7103],
+                             [-0.0371, 0.7605, 0.6482, -0.6424],
+                             [0.0000, 0.0000, 0.0000, 1.0000]])
+
+    T_chess_cam2 = np.array([[0.6760, 0.4811, -0.5582, 0.6475],
+                             [-0.7369, 0.4343, -0.5180, 0.8451],
+                             [-0.0068, 0.7615, 0.6481, -0.7279],
+                             [0.0000, 0.0000, 0.0000, 1.0000]])
+
+    T_robot_chess = np.array([[-1, 0, 0, 0.3580],
+                              [0, 1, 0, 0.0300],
+                              [0, 0, -1, 0.0060],
+                              [0, 0, 0, 1]])
+
+    # Transformation from camera frame (left camera of respective stereo camera) to robot base frame
+    T_robot_cam1 = np.dot(T_robot_chess, T_chess_cam1)
+    T_robot_cam2 = np.dot(T_robot_chess, T_chess_cam2)
 
     # Create Mat object to hold the image and depth map
     image = sl.Mat()
