@@ -8,6 +8,11 @@ from ultralytics import YOLO
 import open3d as o3d
 import random
 
+# Functionality of code: Real-time object detection and 3D point cloud visualization using ZED camera and YOLO11
+# The code demonstrates how to perform real-time object detection using YOLO11 and visualize the detected objects in 3D
+
+
+
 # Define a color map for different classes
 color_map = {
     0: [15, 82, 186],  # Person - sapphire
@@ -19,10 +24,10 @@ color_map = {
 }
 
 # Define class names for the detected objects
-class_names = {0: "Person", 39: "Bottle", 41: "Cup", 62: "Laptop", 64: "Mouse", 66: "Keyboard"}
+class_names = {0: "Person", 39: "Bottle", 41: "Cup", 62: "Laptop", 64: "Mouse", 66: "Keyboard", 73: "Book"}
 
 def erode_mask(mask, iterations=1):
-    kernel = np.ones((8, 8), np.uint8)
+    kernel = np.ones((10, 10), np.uint8)
     eroded_mask = cv2.erode(mask, kernel, iterations=iterations)
     return eroded_mask
 
@@ -65,15 +70,6 @@ def random_sample_pointcloud(pc, fraction):
 
 def main():
 
-    # Create a coordinate frame
-    coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.05, origin=[0, 0, 0])
-
-    transformation_matrix = np.array([[1, 0, 0, 0],
-                                      [0, -1, 0, 0],
-                                      [0, 0, -1, 0],
-                                      [0, 0, 0, 1]])
-    coordinate_frame.transform(transformation_matrix)
-
     # Check if CUDA is available and set the device accordingly
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f"Using device: {device}")
@@ -92,6 +88,11 @@ def main():
     init_params.depth_minimum_distance = 0.3
     init_params.coordinate_units = sl.UNIT.METER
 
+    # Set the serial number of the camera
+    sn_cam1 = 33137761
+    sn_cam2 = 36829049
+    init_params.set_from_serial_number(sn_cam1)
+
     # Check if the camera is opened successfully
     err = zed.open(init_params)
     if err != sl.ERROR_CODE.SUCCESS:
@@ -105,15 +106,16 @@ def main():
     img_width, img_height = calibration_params.left_cam.image_size.width, calibration_params.left_cam.image_size.height
 
     # Transformation matrices from the chessboard to the camera frames
+    # We get these using camera calibration
 
-    T_chess_cam1 = np.array([[-0.9770, 0.1087, -0.1835, 0.3060],
-                             [-0.2100, -0.6401, 0.7390, -0.7103],
-                             [-0.0371, 0.7605, 0.6482, -0.6424],
-                             [0.0000, 0.0000, 0.0000, 1.0000]])
-
-    T_chess_cam2 = np.array([[0.6760, 0.4811, -0.5582, 0.6475],
+    T_chess_cam1 = np.array([[0.6760, 0.4811, -0.5582, 0.6475],
                              [-0.7369, 0.4343, -0.5180, 0.8451],
                              [-0.0068, 0.7615, 0.6481, -0.7279],
+                             [0.0000, 0.0000, 0.0000, 1.0000]])
+
+    T_chess_cam2 = np.array([[-0.9562, 0.1842, -0.2276, 0.3041],
+                             [-0.2918, -0.5346, 0.7932, -0.6838],
+                             [0.0244, 0.8248, 0.5649, -0.7178],
                              [0.0000, 0.0000, 0.0000, 1.0000]])
 
     # Transformation matrix from the chessboard to the robot base frame
@@ -127,9 +129,43 @@ def main():
     T_robot_cam1 = np.dot(T_robot_chess, T_chess_cam1)
     T_robot_cam2 = np.dot(T_robot_chess, T_chess_cam2)
 
+    # Extract the rotation components -> 3x3 rotation matrix
+    rotation_robot_cam1 = T_robot_cam1[:3, :3]
+    rotation_robot_cam2 = T_robot_cam2[:3, :3]
+
+    # Print the rotation matrices of both cameras
+    print(f"Rotation matrix from robot frame to camera frame 1:\n{rotation_robot_cam1}")
+    print(f"Rotation matrix from robot frame to camera frame 2:\n{rotation_robot_cam2}")
+
+    # Extract translation components
+    origin_robot = np.array([0, 0, 0])
+    origin_cam1 = T_robot_cam1[:3, 3]
+    origin_cam2 = T_robot_cam2[:3, 3]
+
+    # Print the translation vectors of both cameras
+    print(f"Translation vector from robot frame to camera frame 1: {origin_cam1}")
+    print(f"Translation vector from robot frame to camera frame 2: {origin_cam2}")
+
+    # Calculate Euclidean distances
+    distance_cam1 = np.linalg.norm(origin_cam1 - origin_robot)
+    distance_cam2 = np.linalg.norm(origin_cam2 - origin_robot)
+
+    print(f"Distance from robot frame to camera frame 1: {distance_cam1:.4f} meters")
+    print(f"Distance from robot frame to camera frame 2: {distance_cam2:.4f} meters")
+
     # Create a robot base frame
-    robot_base_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.05, origin=[0, 0, 0])
-    robot_base_frame.transform(T_robot_cam1)
+    robot_base_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1, origin=[0, 0, 0])
+    # Create a cube centered at the origin of the robot frame
+    cube = o3d.geometry.TriangleMesh.create_box(width=0.05, height=0.05, depth=0.05)
+    cube.translate([-0.025, -0.025, -0.025])  # Center the cube at the origin
+    cube.paint_uniform_color([1, 0, 0])  # Color the cube in red
+    # Create and transform the camera frame to visualize its position in the robot's coordinate space
+    camera_frame1 = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.05, origin=[0, 0, 0])
+    camera_frame1.transform(T_robot_cam1)
+
+    # Create and transform the camera frame to visualize its position in the robot's coordinate space
+    camera_frame2 = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.05, origin=[0, 0, 0])
+    camera_frame2.transform(T_robot_cam2)  # Transform the camera frame to the robot's coordinate frame
 
     # Create Mat object to hold the image and depth map
     image = sl.Mat()
@@ -140,14 +176,17 @@ def main():
     # Initialize Open3D visualizer (using Visualizer for full interaction)
     vis = o3d.visualization.Visualizer()
     vis.create_window(window_name='Visualization-Pointcloud', width=img_width, height=img_height)
-    vis.add_geometry(coordinate_frame)
+    vis.add_geometry(robot_base_frame)
+    vis.add_geometry(camera_frame1)
+    vis.add_geometry(camera_frame2)
+    vis.add_geometry(cube)
 
     # Create a named window for the video feed
     cv2.namedWindow("YOLO11 Segmentation+Tracking")
 
     fps_values = []
     frame_count = 0
-    update_frequency = 5  # Update every 5 frames -> Significant performance improvement in visualization
+    update_frequency = 30  # Update every 5 frames -> Significant performance improvement in visualization
 
     # Real-Time Loop for Capturing and Processing Frames
     while key != ord('q'):
@@ -169,13 +208,14 @@ def main():
             # Run YOLO11 inference on the frame
             results = model.track(
                 source=frame,
-                imgsz=640,
+                imgsz=640, # Lower input resolution for faster inference
                 max_det=20,
-                classes=[0, 39, 41, 62, 64, 66],
+                vid_stride = 3,
+                classes=[39,73], # Classes to detect
                 half=True,
                 persist=True,
                 retina_masks=True,
-                conf=0.5,
+                conf=0.3,
                 device=device,
                 tracker="ultralytics/cfg/trackers/bytetrack.yaml"
             )
@@ -214,15 +254,19 @@ def main():
 
                 # Check if any 3D points are returned
                 if points_3d.size(0) > 0:
-                    point_cloud_np = points_3d.cpu().numpy()
-                    point_clouds.append(point_cloud_np)
+                    # Extract the point cloud from the camera frame as a NumPy array
+                    point_cloud_cam1 = points_3d.cpu().numpy()
+                    # Transform the 3D points from the camera1 frame to the robot base frame
+                    point_cloud_np_transformed = np.dot(rotation_robot_cam1, point_cloud_cam1.T).T + origin_cam1
+                    # Append the transformed point cloud to the list
+                    point_clouds.append(point_cloud_np_transformed)
                     class_id = int(class_ids[i])
                     print(f"Class ID: {class_id} ({class_names[class_id]}) in Camera Frame 1")
 
-            # Visualize the 3D point clouds every 'update_frequency' frames
+            # Visualize the 3D point clouds every 'update_frequency' frames -> This step isn't necessarily needed for the final implementation
             if point_clouds and frame_count % update_frequency == 0:
                 vis.clear_geometries()
-
+                # point_clouds is a list of NumPy arrays, each representing a point cloud for a detected object
                 for i, pc in enumerate(point_clouds):
                     # Randomly sample a fraction of the points
                     sampled_pc = random_sample_pointcloud(pc, fraction=0.05)  # Retain 5% of points
@@ -230,19 +274,13 @@ def main():
                     class_id = int(class_ids[i])
                     color = np.array(color_map.get(class_id, [1, 1, 1])) / 255.0
                     pcd.paint_uniform_color(color)
-
-                    # TODO: Check if the transformation matrix is correct
-                    # Transformation matrix for 180° rotation around the x-axis
-                    transformation_matrix = np.array([[1, 0, 0, 0],
-                                                      [0, -1, 0, 0],
-                                                      [0, 0, -1, 0],
-                                                      [0, 0, 0, 1]])
-                    pcd.transform(transformation_matrix)
-
+                    # Apply the transformation matrix to the point cloud
                     vis.add_geometry(pcd)
 
-                vis.add_geometry(coordinate_frame)
                 vis.add_geometry(robot_base_frame)
+                vis.add_geometry(camera_frame1)
+                vis.add_geometry(camera_frame2)
+                vis.add_geometry(cube)
                 vis.poll_events()
                 vis.update_renderer()
 
@@ -252,12 +290,14 @@ def main():
                 captured_point_clouds = []
                 for i, pc in enumerate(point_clouds):
                     pcd = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(pc))
-                    pcd.transform(transformation_matrix)
                     class_id = int(class_ids[i])
                     color = np.array(color_map.get(class_id, [1, 1, 1])) / 255.0
                     pcd.paint_uniform_color(color)
                     captured_point_clouds.append(pcd)
-                captured_point_clouds.append(coordinate_frame)
+                captured_point_clouds.append(robot_base_frame)
+                captured_point_clouds.append(camera_frame1)
+                captured_point_clouds.append(camera_frame2)
+                captured_point_clouds.append(cube)
                 o3d.visualization.draw_geometries(captured_point_clouds)
 
             frame_count += 1

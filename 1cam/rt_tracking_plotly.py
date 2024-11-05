@@ -20,7 +20,7 @@ color_map = {
 }
 
 # Define class names for the detected objects
-class_names = {0: "Person", 39: "Bottle", 41: "Cup", 62: "Laptop", 64: "Mouse", 66: "Keyboard", 73: "Book", 76: "Scissors"}
+class_names = {0: "Person", 39: "Bottle", 41: "Cup", 62: "Laptop", 64: "Mouse", 66: "Keyboard", 73: "Book"}
 
 def erode_mask(mask, iterations=1):
     kernel = np.ones((14, 14), np.uint8)
@@ -50,19 +50,52 @@ def random_sample_pointcloud(pc, fraction):
     indices = random.sample(range(n_points), sample_size)
     return pc[indices]
 
+def add_coordinate_frame(fig, origin, rotation, name_prefix):
+    axis_length = 0.1
+    x_axis = np.dot(rotation, np.array([axis_length, 0, 0])) + origin
+    y_axis = np.dot(rotation, np.array([0, axis_length, 0])) + origin
+    z_axis = np.dot(rotation, np.array([0, 0, axis_length])) + origin
+
+    fig.add_trace(go.Scatter3d(
+        x=[origin[0], x_axis[0]], y=[origin[1], x_axis[1]], z=[origin[2], x_axis[2]],
+        mode='lines',
+        line=dict(color='red', width=5),
+        name=f'{name_prefix} X-axis',
+        showlegend=False
+    ))
+    fig.add_trace(go.Scatter3d(
+        x=[origin[0], y_axis[0]], y=[origin[1], y_axis[1]], z=[origin[2], y_axis[2]],
+        mode='lines',
+        line=dict(color='green', width=5),
+        name=f'{name_prefix} Y-axis',
+        showlegend=False
+    ))
+    fig.add_trace(go.Scatter3d(
+        x=[origin[0], z_axis[0]], y=[origin[1], z_axis[1]], z=[origin[2], z_axis[2]],
+        mode='lines',
+        line=dict(color='blue', width=5),
+        name=f'{name_prefix} Z-axis',
+        showlegend=False
+    ))
+
 def main():
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f"Using device: {device}")
 
-    model = YOLO("yolo11l-seg.pt").to(device)
+    model = YOLO("../yolo11l-seg.pt").to(device)
 
     zed = sl.Camera()
     init_params = sl.InitParameters()
-    init_params.camera_resolution = sl.RESOLUTION.HD1080
-    init_params.camera_fps = 30
+    init_params.camera_resolution = sl.RESOLUTION.HD720
+    init_params.camera_fps = 60
     init_params.depth_mode = sl.DEPTH_MODE.NEURAL
     init_params.depth_minimum_distance = 0.3
     init_params.coordinate_units = sl.UNIT.METER
+
+    # Set the serial number of the camera
+    sn_cam1 = 33137761
+    sn_cam2 = 36829049
+    init_params.set_from_serial_number(sn_cam1)
 
     err = zed.open(init_params)
     if err != sl.ERROR_CODE.SUCCESS:
@@ -74,14 +107,14 @@ def main():
     cx, cy = calibration_params.left_cam.cx, calibration_params.left_cam.cy
     img_width, img_height = calibration_params.left_cam.image_size.width, calibration_params.left_cam.image_size.height
 
-    T_chess_cam1 = np.array([[0.6760, 0.4811, -0.5582, 0.6475],
-                             [-0.7369, 0.4343, -0.5180, 0.8451],
-                             [-0.0068, 0.7615, 0.6481, -0.7279],
+    T_chess_cam1 = np.array([[0.6631, 0.4861, -0.5692, 0.5793],
+                             [-0.7485, 0.4268, -0.5075, 0.7756],
+                             [-0.0038, 0.7626, 0.6469, -0.7253],
                              [0.0000, 0.0000, 0.0000, 1.0000]])
 
-    T_chess_cam2 = np.array([[-0.9562, 0.1842, -0.2276, 0.3041],
-                             [-0.2918, -0.5346, 0.7932, -0.6838],
-                             [0.0244, 0.8248, 0.5649, -0.7178],
+    T_chess_cam2 = np.array([[-0.9575, 0.1834, -0.2225, 0.3376],
+                             [-0.2871, -0.5354, 0.7943, -0.6857],
+                             [0.0266, 0.8244, 0.5653, -0.7224],
                              [0.0000, 0.0000, 0.0000, 1.0000]])
 
     T_robot_chess = np.array([[-1, 0, 0, 0.3580],
@@ -137,7 +170,7 @@ def main():
                 source=frame,
                 imgsz=640,
                 max_det=20,
-                classes=[0, 39, 41, 62, 64, 66, 73, 76],
+                classes=[0, 39, 41, 62, 64, 66, 73],
                 half=True,
                 persist=True,
                 retina_masks=True,
@@ -175,25 +208,48 @@ def main():
             if point_clouds and frame_count % update_frequency == 0:
                 fig = go.Figure()
 
-                # Add coordinate frame
+                # Add robot base coordinate frame
                 fig.add_trace(go.Scatter3d(
                     x=[0, 0.1], y=[0, 0], z=[0, 0],
                     mode='lines',
                     line=dict(color='red', width=5),
-                    name='X-axis'
+                    name='Robot X-axis'
                 ))
                 fig.add_trace(go.Scatter3d(
                     x=[0, 0], y=[0, 0.1], z=[0, 0],
                     mode='lines',
                     line=dict(color='green', width=5),
-                    name='Y-axis'
+                    name='Robot Y-axis'
                 ))
                 fig.add_trace(go.Scatter3d(
                     x=[0, 0], y=[0, 0], z=[0, 0.1],
                     mode='lines',
                     line=dict(color='blue', width=5),
-                    name='Z-axis'
+                    name='Robot Z-axis'
                 ))
+
+                # Add the camera positions
+                fig.add_trace(go.Scatter3d(
+                    x=[origin_cam1[0]], y=[origin_cam1[1]], z=[origin_cam1[2]],
+                    mode='markers+text',
+                    marker=dict(size=5, color='red'),
+                    textposition= "top center",
+                    name='Camera 1',
+                    showlegend=False
+                ))
+
+                fig.add_trace(go.Scatter3d(
+                    x=[origin_cam2[0]], y=[origin_cam2[1]], z=[origin_cam2[2]],
+                    mode='markers+text',
+                    marker=dict(size=5, color='blue'),
+                    textposition= "top center",
+                    name='Camera 2',
+                    showlegend=False
+                ))
+
+                # Add camera coordinate frames
+                add_coordinate_frame(fig, origin_cam1, rotation_robot_cam1, 'Camera 1')
+                add_coordinate_frame(fig, origin_cam2, rotation_robot_cam2, 'Camera 2')
 
                 for pc, class_id in point_clouds:
                     sampled_pc = random_sample_pointcloud(pc, fraction=0.2)
@@ -202,22 +258,34 @@ def main():
                         x=sampled_pc[:, 0], y=sampled_pc[:, 1], z=sampled_pc[:, 2],
                         mode='markers',
                         marker=dict(size=2, color=f'rgb({color[0]*255},{color[1]*255},{color[2]*255})'),
-                        name=class_names[class_id],
-                        legendgroup=class_names[class_id],
-                        showlegend=True,
-                        marker_symbol='circle',
-                        marker_size=10  # Increase the size of the legend marker
+                        name=class_names[class_id]
                     ))
 
                 fig.update_layout(
-                    title='3D Point Cloud Visualization',
-                    scene=dict(
-                        xaxis=dict(title='X Axis', range=[0, 0.75], backgroundcolor='rgb(230, 230, 230)', gridcolor='white', showbackground=True),
-                        yaxis=dict(title='Y Axis', range=[-0.5, 1], backgroundcolor='rgb(230, 230, 230)', gridcolor='white', showbackground=True),
-                        zaxis=dict(title='Z Axis', range=[0, 1], backgroundcolor='rgb(230, 230, 230)', gridcolor='white', showbackground=True)
+                    title=dict(
+                        text="3D Point Cloud",
+                        x=0.5,
+                        xanchor='center'
                     ),
-                    legend=dict(x=0, y=1, traceorder='normal', font=dict(size=12)),
-                    margin=dict(l=0, r=0, b=0, t=40)
+                    legend = dict(
+                        title="Classes",
+                        font=dict(
+                            family="Courier",
+                            size=12,
+                            color="black"
+                        ),
+                        bgcolor="LightSteelBlue",
+                        bordercolor="Black",
+                        borderwidth=2
+                    ),
+                    scene_camera=dict(
+                        eye=dict(x=1.5, y=1.5, z=1.5)
+                    ),
+                    scene=dict(
+                        xaxis=dict(range=[-0.5, 1]),
+                        yaxis=dict(range=[-0.75,1]),
+                        zaxis=dict(range=[0, 1])
+                    )
                 )
 
                 fig.show()
