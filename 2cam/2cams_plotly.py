@@ -8,6 +8,8 @@ import random
 
 from ultralytics import YOLO
 
+# This script uses YOLO 11 on two camera instances to detect objects and plot their 3D point clouds in a 3D plot using Plotly
+
 # Define a color map for different classes
 color_map = {
     0: [15, 82, 186],  # Person - sapphire
@@ -82,7 +84,7 @@ def main():
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f"Using device: {device}")
 
-    model = YOLO("../yolo11l-seg.pt").to(device)
+    model = YOLO("yolo11l-seg.pt").to(device)
 
     zed1 = sl.Camera()
     zed2 = sl.Camera()
@@ -91,12 +93,12 @@ def main():
     init_params1.camera_resolution = sl.RESOLUTION.HD720
     init_params1.camera_fps = 60
     init_params1.depth_mode = sl.DEPTH_MODE.NEURAL_PLUS
-    init_params1.depth_minimum_distance = 0.2
+    init_params1.depth_minimum_distance = 0.4
     init_params1.coordinate_units = sl.UNIT.METER
     init_params2.camera_resolution = sl.RESOLUTION.HD720
     init_params2.camera_fps = 60
     init_params2.depth_mode = sl.DEPTH_MODE.NEURAL_PLUS
-    init_params2.depth_minimum_distance = 0.2
+    init_params2.depth_minimum_distance = 0.4
     init_params2.coordinate_units = sl.UNIT.METER
 
     # Set the serial numbers of the cameras
@@ -122,20 +124,21 @@ def main():
     fx2, fy2 = calibration_params2.left_cam.fx, calibration_params2.left_cam.fy
     cx2, cy2 = calibration_params2.left_cam.cx, calibration_params2.left_cam.cy
 
-    T_chess_cam1 = np.array([[0.6631, 0.4861, -0.5692, 0.5793],
-                             [-0.7485, 0.4268, -0.5075, 0.7756],
-                             [-0.0038, 0.7626, 0.6469, -0.7253],
+    # Define the transformation matrices from the chessboard to the camera frames
+    T_chess_cam1 = np.array([[0.6589, 0.4859, -0.5743, 0.5843],
+                             [-0.7523, 0.4250, -0.5035, 0.7739],
+                             [-0.0006, 0.7637, 0.6455, -0.7241],
                              [0.0000, 0.0000, 0.0000, 1.0000]])
 
-    T_chess_cam2 = np.array([[-0.9575, 0.1834, -0.2225, 0.3376],
-                             [-0.2871, -0.5354, 0.7943, -0.6857],
-                             [0.0266, 0.8244, 0.5653, -0.7224],
+    T_chess_cam2 = np.array([[-0.9358, 0.2222, -0.2739, 0.3735],
+                             [-0.3525, -0.5667, 0.7447, -0.6413],
+                             [0.0103, 0.7934, 0.6086, -0.7165],
                              [0.0000, 0.0000, 0.0000, 1.0000]])
 
-    T_robot_chess = np.array([[-1, 0, 0, 0.3580],
-                              [0, 1, 0, 0.0300],
-                              [0, 0, -1, 0.0060],
-                              [0, 0, 0, 1]])
+    T_robot_chess = np.array([[-1.0000, 0.0000, 0.0000, 0.3580],
+                              [0.0000, 1.0000, 0.0000, 0.0300],
+                              [0.0000, 0.0000, -1.0000, 0.0060],
+                              [0.0000, 0.0000, 0.0000, 1.0000]])
 
     T_robot_cam1 = np.dot(T_robot_chess, T_chess_cam1)
     T_robot_cam2 = np.dot(T_robot_chess, T_chess_cam2)
@@ -195,7 +198,7 @@ def main():
                 half=True,
                 persist=True,
                 retina_masks=True,
-                conf=0.5,
+                conf=0.2,
                 device=device,
                 tracker="ultralytics/cfg/trackers/bytetrack.yaml"
             )
@@ -208,7 +211,7 @@ def main():
                 half=True,
                 persist=True,
                 retina_masks=True,
-                conf=0.5,
+                conf=0.2,
                 device=device,
                 tracker="ultralytics/cfg/trackers/bytetrack.yaml"
             )
@@ -306,7 +309,7 @@ def main():
                 add_coordinate_frame(fig, origin_cam2, rotation_robot_cam2, 'Camera 2')
 
                 for pc, class_id in point_clouds1 + point_clouds2:
-                    sampled_pc = random_sample_pointcloud(pc, fraction=0.2)
+                    sampled_pc = random_sample_pointcloud(pc, fraction=0.5)
                     color = np.array(color_map.get(class_id, [255, 255, 255])) / 255.0
                     fig.add_trace(go.Scatter3d(
                         x=sampled_pc[:, 0], y=sampled_pc[:, 1], z=sampled_pc[:, 2],
@@ -356,14 +359,18 @@ def main():
             if annotated_frame1 is not None:
                 cv2.putText(annotated_frame1, f"FPS: {avg_fps:.2f}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
                 height, width, _ = frame1.shape
-                cv2.resizeWindow("YOLO11 Segmentation+Tracking", width, height)
+                cv2.resizeWindow("YOLO11 Segmentation+Tracking", width // 2, height // 2)
                 cv2.imshow("YOLO11 Segmentation+Tracking", annotated_frame1)
 
             if annotated_frame2 is not None:
                 cv2.putText(annotated_frame2, f"FPS: {avg_fps:.2f}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
                 height, width, _ = frame2.shape
-                cv2.resizeWindow("YOLO11 Segmentation+Tracking", width, height)
+                cv2.resizeWindow("YOLO11 Segmentation+Tracking", width // 2, height // 2)
                 cv2.imshow("YOLO11 Segmentation+Tracking", annotated_frame2)
+
+            # Concatenate the frames horizontally
+            combined_frame = cv2.hconcat([annotated_frame1, annotated_frame2])
+            cv2.imshow("YOLO11 Segmentation+Tracking", combined_frame)
 
             key = cv2.waitKey(1)
 

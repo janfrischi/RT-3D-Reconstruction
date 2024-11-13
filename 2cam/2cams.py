@@ -84,11 +84,11 @@ def process_camera(zed, model, device, vis, coordinate_frame, transformation_mat
             source=frame,
             imgsz=640,
             max_det=20,
-            classes=[0, 39, 41, 62, 64, 66],
+            classes=[39, 64, 73],
             half=True,
             persist=True,
             retina_masks=True,
-            conf=0.5,
+            conf=0.3,
             device=device,
             tracker="ultralytics/cfg/trackers/bytetrack.yaml"
         )
@@ -155,11 +155,10 @@ def process_camera(zed, model, device, vis, coordinate_frame, transformation_mat
     return None, None, []
 
 def main():
-
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f"Using device: {device}")
 
-    model = YOLO("yolo11m-seg.pt").to(device)
+    model = YOLO("../yolo11m-seg.pt").to(device)
 
     zed1 = sl.Camera()
     zed2 = sl.Camera()
@@ -171,14 +170,14 @@ def main():
     init_params.depth_minimum_distance = 0.4
     init_params.coordinate_units = sl.UNIT.METER
 
-    T_chess_cam1 = np.array([[0.6760, 0.4811, -0.5582, 0.6475],
-                             [-0.7369, 0.4343, -0.5180, 0.8451],
-                             [-0.0068, 0.7615, 0.6481, -0.7279],
+    T_chess_cam1 = np.array([[0.6577, 0.4860, -0.5756, 0.5863],
+                             [-0.7533, 0.4243, -0.5025, 0.7735],
+                             [-0.0000, 0.7641, 0.6451, -0.7238],
                              [0.0000, 0.0000, 0.0000, 1.0000]])
 
-    T_chess_cam2 = np.array([[-0.9770, 0.1087, -0.1835, 0.3060],
-                             [-0.2100, -0.6401, 0.7390, -0.7103],
-                             [-0.0371, 0.7605, 0.6482, -0.6424],
+    T_chess_cam2 = np.array([[0.7980, -0.3177, 0.5121, -0.5336],
+                             [0.6025, 0.4397, -0.6661, 0.9321],
+                             [-0.0135, 0.8401, 0.5423, -0.6115],
                              [0.0000, 0.0000, 0.0000, 1.0000]])
 
     T_robot_chess = np.array([[-1, 0, 0, 0.3580],
@@ -228,9 +227,11 @@ def main():
     vis.add_geometry(camera_frame2)
 
     key = ''
+    point_clouds1 = []
+    point_clouds2 = []
     while key != ord('q'):
-        key1, frame1, point_clouds1 = process_camera(zed1, model, device, vis, camera_frame1, T_robot_cam1, "YOLO11 Segmentation+Tracking - Camera 1")
-        key2, frame2, point_clouds2 = process_camera(zed2, model, device, vis, camera_frame2, T_robot_cam2, "YOLO11 Segmentation+Tracking - Camera 2")
+        key1, frame1, pc1 = process_camera(zed1, model, device, vis, camera_frame1, T_robot_cam1, "YOLO11 Segmentation+Tracking - Camera 1")
+        key2, frame2, pc2 = process_camera(zed2, model, device, vis, camera_frame2, T_robot_cam2, "YOLO11 Segmentation+Tracking - Camera 2")
 
         if key1 == ord('q') or key2 == ord('q'):
             key = ord('q')
@@ -239,6 +240,9 @@ def main():
             cv2.imshow("YOLO11 Segmentation+Tracking - Camera 1", frame1)
         if frame2 is not None:
             cv2.imshow("YOLO11 Segmentation+Tracking - Camera 2", frame2)
+
+        point_clouds1.extend(pc1)
+        point_clouds2.extend(pc2)
 
         if cv2.waitKey(1) & 0xFF == ord('s'):
             print("Capturing static image of the scene")
@@ -264,5 +268,13 @@ def main():
     vis.destroy_window()
     cv2.destroyAllWindows()
 
+    return point_clouds1, point_clouds2
+
 if __name__ == "__main__":
-    main()
+    point_clouds1, point_clouds2 = main()
+    print("Point clouds from Camera 1:", point_clouds1)
+    print("Point clouds from Camera 2:", point_clouds2)
+
+    # Clear the point clouds
+    point_clouds1.clear()
+    point_clouds2.clear()

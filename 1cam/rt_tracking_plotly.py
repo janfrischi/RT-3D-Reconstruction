@@ -95,7 +95,7 @@ def main():
     # Set the serial number of the camera
     sn_cam1 = 33137761
     sn_cam2 = 36829049
-    init_params.set_from_serial_number(sn_cam1)
+    init_params.set_from_serial_number(sn_cam2)
 
     err = zed.open(init_params)
     if err != sl.ERROR_CODE.SUCCESS:
@@ -200,8 +200,8 @@ def main():
                     points_3d = get_3d_points_torch(mask_indices, depth_map, cx, cy, fx, fy)
 
                 if points_3d.size(0) > 0:
-                    point_cloud_cam1 = points_3d.cpu().numpy()
-                    point_cloud_np_transformed = np.dot(rotation_robot_cam1, point_cloud_cam1.T).T + origin_cam1
+                    point_cloud_cam2 = points_3d.cpu().numpy()
+                    point_cloud_np_transformed = np.dot(rotation_robot_cam2, point_cloud_cam2.T).T + origin_cam2
                     point_clouds.append((point_cloud_np_transformed, int(class_ids[i])))
                     print(f"Class ID: {class_ids[i]} ({class_names[class_ids[i]]}) in Camera Frame 1")
 

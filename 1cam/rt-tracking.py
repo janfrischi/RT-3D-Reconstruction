@@ -75,7 +75,7 @@ def main():
     print(f"Using device: {device}")
 
     # Load the pretrained YOLO11 segmentation model and move it to the device
-    model = YOLO("yolo11m-seg.pt").to(device)
+    model = YOLO("yolo11l-seg.pt").to(device)
 
     # Create a ZED camera object
     zed = sl.Camera()
@@ -91,7 +91,7 @@ def main():
     # Set the serial number of the camera
     sn_cam1 = 33137761
     sn_cam2 = 36829049
-    init_params.set_from_serial_number(sn_cam1)
+    init_params.set_from_serial_number(sn_cam2)
 
     # Check if the camera is opened successfully
     err = zed.open(init_params)
@@ -210,7 +210,7 @@ def main():
                 source=frame,
                 imgsz=640, # Lower input resolution for faster inference
                 max_det=20,
-                vid_stride = 3,
+                vid_stride = 5,
                 classes=[39,73], # Classes to detect
                 half=True,
                 persist=True,
@@ -255,9 +255,9 @@ def main():
                 # Check if any 3D points are returned
                 if points_3d.size(0) > 0:
                     # Extract the point cloud from the camera frame as a NumPy array
-                    point_cloud_cam1 = points_3d.cpu().numpy()
+                    point_cloud_cam2 = points_3d.cpu().numpy()
                     # Transform the 3D points from the camera1 frame to the robot base frame
-                    point_cloud_np_transformed = np.dot(rotation_robot_cam1, point_cloud_cam1.T).T + origin_cam1
+                    point_cloud_np_transformed = np.dot(rotation_robot_cam2, point_cloud_cam2.T).T + origin_cam2
                     # Append the transformed point cloud to the list
                     point_clouds.append(point_cloud_np_transformed)
                     class_id = int(class_ids[i])

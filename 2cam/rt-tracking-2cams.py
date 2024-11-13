@@ -82,26 +82,27 @@ def main():
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f"Using device: {device}")
 
-    model = YOLO("yolo11l-seg.pt").to(device)
+    model = YOLO("../yolo11l-seg.pt").to(device)
 
     zed1 = sl.Camera()
     zed2 = sl.Camera()
+
     init_params1 = sl.InitParameters()
     init_params2 = sl.InitParameters()
     init_params1.camera_resolution = sl.RESOLUTION.HD720
     init_params1.camera_fps = 60
     init_params1.depth_mode = sl.DEPTH_MODE.NEURAL
-    init_params1.depth_minimum_distance = 0.3
+    init_params1.depth_minimum_distance = 0.2
     init_params1.coordinate_units = sl.UNIT.METER
     init_params2.camera_resolution = sl.RESOLUTION.HD720
     init_params2.camera_fps = 60
     init_params2.depth_mode = sl.DEPTH_MODE.NEURAL
-    init_params2.depth_minimum_distance = 0.3
+    init_params2.depth_minimum_distance = 0.2
     init_params2.coordinate_units = sl.UNIT.METER
 
     # Set the serial numbers of the cameras
     sn_cam1 = 33137761
-    sn_cam2 = 36829049
+    sn_cam2 = 30635524
     init_params1.set_from_serial_number(sn_cam1)
     init_params2.set_from_serial_number(sn_cam2)
 
