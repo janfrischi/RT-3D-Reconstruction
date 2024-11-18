@@ -83,7 +83,7 @@ def process_camera(zed, model, device, vis, coordinate_frame, transformation_mat
         results = model.track(
             source=frame,
             imgsz=640,
-            max_det=20,
+            max_det=10,
             classes=[39, 64, 73],
             half=True,
             persist=True,
@@ -158,7 +158,7 @@ def main():
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f"Using device: {device}")
 
-    model = YOLO("../yolo11m-seg.pt").to(device)
+    model = YOLO("yolo11l-seg.pt").to(device)
 
     zed1 = sl.Camera()
     zed2 = sl.Camera()
@@ -175,9 +175,9 @@ def main():
                              [-0.0000, 0.7641, 0.6451, -0.7238],
                              [0.0000, 0.0000, 0.0000, 1.0000]])
 
-    T_chess_cam2 = np.array([[0.7980, -0.3177, 0.5121, -0.5336],
-                             [0.6025, 0.4397, -0.6661, 0.9321],
-                             [-0.0135, 0.8401, 0.5423, -0.6115],
+    T_chess_cam2 = np.array([[-0.3884, -0.5786, 0.7172, -0.6803],
+                             [0.9215, -0.2497, 0.2976, -0.1952],
+                             [0.0068, 0.7765, 0.6301, -0.6902],
                              [0.0000, 0.0000, 0.0000, 1.0000]])
 
     T_robot_chess = np.array([[-1, 0, 0, 0.3580],

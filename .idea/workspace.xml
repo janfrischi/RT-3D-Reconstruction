@@ -5,16 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="451445bc-3695-4851-ba1f-d170bd89a032" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Capture_Pointcloud.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/1cam/rt-tracking.py" beforeDir="false" afterPath="$PROJECT_DIR$/1cam/rt-tracking.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/1cam/rt_tracking-benchmarking.py" beforeDir="false" afterPath="$PROJECT_DIR$/1cam/rt_tracking-benchmarking.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/1cam/rt_tracking_plotly.py" beforeDir="false" afterPath="$PROJECT_DIR$/1cam/rt_tracking_plotly.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/2cam/2cams.py" beforeDir="false" afterPath="$PROJECT_DIR$/2cam/2cams.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/2cam/2cams_novis.py" beforeDir="false" afterPath="$PROJECT_DIR$/2cam/2cams_novis.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/2cam/2cams_plotly.py" beforeDir="false" afterPath="$PROJECT_DIR$/2cam/2cams_plotly.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/2cam/rt-tracking-2cams.py" beforeDir="false" afterPath="$PROJECT_DIR$/2cam/rt-tracking-2cams.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/matching.py" beforeDir="false" afterPath="$PROJECT_DIR$/matching.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -26,6 +20,17 @@
       <list>
         <option value="Python Script" />
       </list>
+    </option>
+  </component>
+  <component name="FlaskConsoleOptions" custom-start-script="import sys&#10;sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])&#10;from flask.cli import ScriptInfo&#10;locals().update(ScriptInfo(create_app=None).load_app().make_shell_context())&#10;print(&quot;Python %s on %s\nApp: %s [%s]\nInstance: %s&quot; % (sys.version, sys.platform, app.import_name, app.env, app.instance_path))">
+    <envs>
+      <env key="FLASK_APP" value="app" />
+    </envs>
+    <option name="myCustomStartScript" value="import sys&#10;sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])&#10;from flask.cli import ScriptInfo&#10;locals().update(ScriptInfo(create_app=None).load_app().make_shell_context())&#10;print(&quot;Python %s on %s\nApp: %s [%s]\nInstance: %s&quot; % (sys.version, sys.platform, app.import_name, app.env, app.instance_path))" />
+    <option name="myEnvs">
+      <map>
+        <entry key="FLASK_APP" value="app" />
+      </map>
     </option>
   </component>
   <component name="Git.Settings">
@@ -42,9 +47,9 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-    "Python.2cams.executor": "Run",
+    "Python.2cams.executor": "Debug",
     "Python.2cams_edit.executor": "Run",
-    "Python.2cams_novis.executor": "Run",
+    "Python.2cams_novis.executor": "Debug",
     "Python.2cams_plotly (1).executor": "Run",
     "Python.2cams_plotly.executor": "Run",
     "Python.2camsedit.executor": "Run",
@@ -64,13 +69,13 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "Shell Script.run_calibration.sh.executor": "Run",
     "git-widget-placeholder": "main",
-    "last_opened_file_path": "/home/janfrischknecht/Documents/Semesterprojekt/Camera_Calibration/camera_calibration",
+    "last_opened_file_path": "/home/janfrischknecht/Documents/Semesterprojekt/RT-3D-Reconstruction",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "settings.editor.selected.configurable": "reference.settingsdialog.IDE.editor.colors.Color Scheme Font",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -100,6 +105,52 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/2cam/2cams.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="2cams" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="RT-3D-Reconstruction" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/2cam" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/2cam/2cams.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="2cams_novis" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="RT-3D-Reconstruction" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/2cam" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/2cam/2cams_novis.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -154,6 +205,52 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="2cams_plotly (1)" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="RT-3D-Reconstruction" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/2cam" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/2cam/2cams_plotly.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="matching" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="RT-3D-Reconstruction" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/matching.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="matching" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="RT-3D-Reconstruction" />
       <option name="ENV_FILES" value="" />
@@ -200,11 +297,34 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="rt-tracking-2cams" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="RT-3D-Reconstruction" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/2cam" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/2cam/rt-tracking-2cams.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <recent_temporary>
       <list>
         <item itemvalue="Python.2cams_novis" />
-        <item itemvalue="Python.2cams_plotly (1)" />
         <item itemvalue="Python.2cams" />
+        <item itemvalue="Python.2cams_plotly (1)" />
         <item itemvalue="Python.matching" />
         <item itemvalue="Python.rt-tracking-2cams" />
       </list>
@@ -243,7 +363,9 @@
       <workItem from="1730815783168" duration="10800000" />
       <workItem from="1730885832317" duration="666000" />
       <workItem from="1730886724111" duration="33780000" />
-      <workItem from="1731400200625" duration="14927000" />
+      <workItem from="1731400200625" duration="23228000" />
+      <workItem from="1731914847763" duration="1370000" />
+      <workItem from="1731916230209" duration="2607000" />
     </task>
     <servers />
   </component>
@@ -271,8 +393,8 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/2cam/2cams_novis.py</url>
-          <line>423</line>
-          <option name="timeStamp" value="11" />
+          <line>538</line>
+          <option name="timeStamp" value="16" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
@@ -288,7 +410,7 @@
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$rt_tracking.coverage" NAME="rt-tracking Coverage Results" MODIFIED="1730815888699" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/1cam" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$2camsedit.coverage" NAME="2cams_novis Coverage Results" MODIFIED="1730885212970" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/2cam" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$rt_tracking_2cams.coverage" NAME="rt-tracking-2cams Coverage Results" MODIFIED="1731310558828" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/2cam" />
-    <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$2cams.coverage" NAME="2cams Coverage Results" MODIFIED="1731421266351" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/2cam" />
+    <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$2cams.coverage" NAME="2cams Coverage Results" MODIFIED="1731916545436" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/2cam" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$Capture_Pointcloud.coverage" NAME="Capture_Pointcloud Coverage Results" MODIFIED="1730887875968" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$test.coverage" NAME="test Coverage Results" MODIFIED="1730885861830" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$2cams_plotly.coverage" NAME="2cams_plotly Coverage Results" MODIFIED="1730812138611" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
@@ -298,9 +420,9 @@
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$rt_tracking_plotly.coverage" NAME="rt_tracking_plotly Coverage Results" MODIFIED="1730814489888" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/1cam" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$rt_tracking_novis.coverage" NAME="rt-tracking-novis Coverage Results" MODIFIED="1730732826785" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$rt_tracking_benchmarking2.coverage" NAME="rt-tracking-benchmarking2 Coverage Results" MODIFIED="1730728964131" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$2cams_novis.coverage" NAME="2cams_novis Coverage Results" MODIFIED="1731428783210" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/2cam" />
+    <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$2cams_novis.coverage" NAME="2cams_novis Coverage Results" MODIFIED="1731917848657" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/2cam" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$rt_tracking_zed_pointcloud_serial.coverage" NAME="rt_tracking-zed-pointcloud-serial Coverage Results" MODIFIED="1730812442209" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$matching.coverage" NAME="matching Coverage Results" MODIFIED="1731331049129" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$2cams_plotly__1_.coverage" NAME="2cams_plotly (1) Coverage Results" MODIFIED="1731427396168" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/2cam" />
+    <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$2cams_plotly__1_.coverage" NAME="2cams_plotly (1) Coverage Results" MODIFIED="1731500373383" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/2cam" />
   </component>
 </project>

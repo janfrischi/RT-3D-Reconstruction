@@ -124,15 +124,14 @@ def main():
     fx2, fy2 = calibration_params2.left_cam.fx, calibration_params2.left_cam.fy
     cx2, cy2 = calibration_params2.left_cam.cx, calibration_params2.left_cam.cy
 
-    # Define the transformation matrices from the chessboard to the camera frames
     T_chess_cam1 = np.array([[0.6589, 0.4859, -0.5743, 0.5843],
                              [-0.7523, 0.4250, -0.5035, 0.7739],
                              [-0.0006, 0.7637, 0.6455, -0.7241],
                              [0.0000, 0.0000, 0.0000, 1.0000]])
 
-    T_chess_cam2 = np.array([[-0.9358, 0.2222, -0.2739, 0.3735],
-                             [-0.3525, -0.5667, 0.7447, -0.6413],
-                             [0.0103, 0.7934, 0.6086, -0.7165],
+    T_chess_cam2 = np.array([[-0.3884, -0.5786, 0.7172, -0.6803],
+                             [0.9215, -0.2497, 0.2976, -0.1952],
+                             [0.0068, 0.7765, 0.6301, -0.6902],
                              [0.0000, 0.0000, 0.0000, 1.0000]])
 
     T_robot_chess = np.array([[-1.0000, 0.0000, 0.0000, 0.3580],
