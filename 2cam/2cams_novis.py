@@ -111,6 +111,8 @@ def calculate_centroid(point_cloud):
 def fuse_point_clouds_centroid(point_clouds_camera1, point_clouds_camera2, distance_threshold=0.1):
     # Group the point clouds by the class ID
     # The class dicts are of the form: {class_id1: [point_cloud1, point_cloud2, ...], class_id2: [point_cloud1, point_cloud2, ...]}
+    pcs1 = []
+    pcs2 = []
     class_dict1 = {}
     class_dict2 = {}
 

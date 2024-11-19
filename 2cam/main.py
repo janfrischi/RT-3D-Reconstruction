@@ -1,9 +1,9 @@
 import numpy as np
-from point_cloud_processor import MainApp
+from object_detection_and_point_cloud_processing import MainApp
 
 if __name__ == "__main__":
     # Initialize the YOLO model and the camera system
-    model_path = "yolo11m-seg.pt"
+    model_path = "models/yolo11l-seg.pt"
     sn_cam1 = 33137761
     sn_cam2 = 36829049
 
@@ -44,14 +44,14 @@ if __name__ == "__main__":
     # Initialize the parameters for both cameras
     init_params1 = {
         "resolution": "HD720",
-        "fps": 30,
+        "fps": 60,
         "depth_mode": "NEURAL",
         "min_distance": 0.4,
         "units": "METER"
     }
     init_params2 = {
         "resolution": "HD720",
-        "fps": 30,
+        "fps": 60,
         "depth_mode": "NEURAL",
         "min_distance": 0.4,
         "units": "METER"
@@ -59,4 +59,7 @@ if __name__ == "__main__":
 
     # Create an instance of the MainApp class and run the application
     app = MainApp(model_path, sn_cam1, sn_cam2, color_map, class_names, T_chess_cam1, T_chess_cam2, T_robot_chess, init_params1, init_params2)
-    app.run()
+    for fused_pc in app.run():
+        pass
+
+

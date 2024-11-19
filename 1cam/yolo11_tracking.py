@@ -14,7 +14,7 @@ def main():
     print(f"Using device: {device}")
 
     # Load the pretrained YOLO11 model and move it to the device
-    model = YOLO("yolo11l-seg.pt").to(device)
+    model = YOLO("models/yolo11l-seg.pt").to(device)
 
     # Create a ZED camera object
     zed = sl.Camera()
