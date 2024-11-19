@@ -2,7 +2,7 @@
 
 This project implements a vision-based pipeline for object detection, tracking, and point cloud processing using YOLO for segmentation and the ZED stereo camera system for depth sensing. The main objective of this project is to detect / segment and track specific objects in real-time. Using the segmentations masks wegenerate 3D point clouds for these objects, and process the point clouds to remove noise and improve data quality.
 
-- [Features](#features)
+- [Key Components and Functionalities](#key-components-and-functionalities)
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [File Structure](#file-structure)
@@ -17,17 +17,29 @@ This project implements a vision-based pipeline for object detection, tracking, 
   - [Sample Configuration in `main.py`](#sample-configuration-in-mainpy)
   - [Transformations](#transformations)
   - [Example Usage in `main.py`](#example-usage-in-mainpy)
-- [Key Components and Functionalities](#key-components-and-functionalities)
 - [Notes](#notes)
 - [Troubleshooting](#troubleshooting)
 
 
-## Features
+## Key Components and Functionalities
 
-- **Real-Time Object Detection/Segmentation and Tracking**: Uses the YOLO11 model for object detection/segmentation and tracking in each camera frame.
-- **Depth-Based Point Cloud Generation**: Generates 3D point clouds of detected objects by using depth information from ZED stereo cameras and the segmentation masks.
-- **Point Cloud Processing**: Includes functionalities to filter outliers and fuse point clouds from multiple camera perspectives.
-- **Modular Architecture**: The project is organized into multiple classes to manage cameras, object detection models, and point cloud processing.
+1. ** Real Time Object Detection/Segmentation and Tracking**:
+   - YOLO model detects specific objects in frames from both cameras.
+   
+2. **Depth Map Conversion to 3D Points**:
+   - The depth information from the ZED stereo cameras is used to convert 2D mask pixels into 3D coordinates.
+   
+3. **Point Cloud Processing**:
+   - After generating point clouds from detected objects, the points are downsampled and outliers are removed.
+   - Point clouds from both cameras are fused based on centroid distance to generate a comprehensive 3D representation.
+
+4. **Display and Visualization**:
+   - Annotated frames with bounding boxes and object labels are displayed, showing the objects detected in real-time.
+   - The frame rate (FPS) is displayed on each frame for performance monitoring.
+
+5. **Modular Architecture**: 
+   - The project is organized into multiple classes to manage cameras, object detection models, and point cloud processing.
+   - Each class has specific functionalities and can be easily extended or modified.
 
 ## Requirements
 
@@ -82,6 +94,7 @@ The `YOLOModel` class initializes the YOLO model for object detection and tracki
 - `imgsz`: Image size for the model.
 - `classes`: List of class IDs to detect and track.
 - `conf`: Confidence threshold for detections.
+- `tracker`: Object tracker type (bytetrack or botsort).
 
 ### Class Definitions
 
@@ -158,22 +171,6 @@ for fused_pc in app.run():
     # Process each fused point cloud as needed
     pass
 ```
-
-## Key Components and Functionalities
-
-1. **Object Detection and Tracking**:
-   - YOLO model detects specific objects in frames from both cameras.
-   
-2. **Depth Map Conversion to 3D Points**:
-   - The depth information from the ZED stereo cameras is used to convert 2D mask pixels into 3D coordinates.
-   
-3. **Point Cloud Processing**:
-   - After generating point clouds from detected objects, the points are downsampled and outliers are removed.
-   - Point clouds from both cameras are fused based on centroid distance to generate a comprehensive 3D representation.
-
-4. **Display and Visualization**:
-   - Annotated frames with bounding boxes and object labels are displayed, showing the objects detected in real-time.
-   - The frame rate (FPS) is displayed on each frame for performance monitoring.
 
 ## Notes
 
