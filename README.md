@@ -1,11 +1,31 @@
 # Vision-Based Object Detection and Point Cloud Processing
 
-This project implements a vision-based pipeline for object detection, tracking, and point cloud processing using YOLO for segmentation and the ZED stereo camera system for depth sensing. The main objective of this project is to detect and track specific objects in real-time, generate 3D point clouds for these objects, and process the point clouds to remove noise and improve data quality.
+This project implements a vision-based pipeline for object detection, tracking, and point cloud processing using YOLO for segmentation and the ZED stereo camera system for depth sensing. The main objective of this project is to detect / segment and track specific objects in real-time. Using the segmentations masks wegenerate 3D point clouds for these objects, and process the point clouds to remove noise and improve data quality.
+
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [File Structure](#file-structure)
+- [Configuration](#configuration)
+  - [Camera Configuration](#camera-configuration)
+  - [Object Detection and Tracking Configuration](#object-detection-and-tracking-configuration)
+  - [Class Definitions](#class-definitions)
+    - [`CameraManager`](#cameramanager)
+    - [`YOLOModel`](#yolomodel)
+    - [`PointCloudProcessor`](#pointcloudprocessor)
+    - [`MainApp`](#mainapp)
+  - [Sample Configuration in `main.py`](#sample-configuration-in-mainpy)
+  - [Transformations](#transformations)
+  - [Example Usage in `main.py`](#example-usage-in-mainpy)
+- [Key Components and Functionalities](#key-components-and-functionalities)
+- [Notes](#notes)
+- [Troubleshooting](#troubleshooting)
+
 
 ## Features
 
-- **Real-Time Object Detection and Tracking**: Uses the YOLO model for object detection and tracking in each camera frame.
-- **Depth-Based Point Cloud Generation**: Generates 3D point clouds of detected objects by using depth information from ZED stereo cameras.
+- **Real-Time Object Detection/Segmentation and Tracking**: Uses the YOLO11 model for object detection/segmentation and tracking in each camera frame.
+- **Depth-Based Point Cloud Generation**: Generates 3D point clouds of detected objects by using depth information from ZED stereo cameras and the segmentation masks.
 - **Point Cloud Processing**: Includes functionalities to filter outliers and fuse point clouds from multiple camera perspectives.
 - **Modular Architecture**: The project is organized into multiple classes to manage cameras, object detection models, and point cloud processing.
 
@@ -33,20 +53,12 @@ This project implements a vision-based pipeline for object detection, tracking, 
    pip install numpy opencv-python torch pyzed open3d ultralytics
    ```
 
-3. **Download the YOLO model**: Place the model file `yolo11l-seg.pt` in the `models/` directory.
+3. **Download the YOLO model**: Place the model file `yolo11l-seg.pt` in the `models/` directory if not already there.
 
 ## File Structure
 
 - `main.py`: Initializes the YOLO model, ZED cameras, and transformation matrices, then runs the main application.
 - `object_detection_and_point_cloud_processing.py`: Contains classes for managing cameras, YOLO model tracking, point cloud processing, and the main application loop.
-
-## Usage
-
-To run the project, use the following command:
-
-```bash
-python main.py
-```
 
 ## Configuration
 
