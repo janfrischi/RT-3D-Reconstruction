@@ -76,7 +76,7 @@ class YOLOModel:
             retina_masks=True,
             conf=0.4,
             device=device,
-            tracker="trackers/bytetrack.yaml"
+            tracker="trackers/botsort.yaml"
         )
 
 class PointCloudProcessor:
