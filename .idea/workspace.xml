@@ -5,23 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="451445bc-3695-4851-ba1f-d170bd89a032" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/trackers/botsort.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/trackers/bytetrack.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/1cam/rt-tracking.py" beforeDir="false" afterPath="$PROJECT_DIR$/1cam/rt-tracking.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/1cam/rt_tracking-benchmarking.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/1cam/yolo11_tracking.py" beforeDir="false" afterPath="$PROJECT_DIR$/1cam/yolo11_tracking.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/2cam/2cams.py" beforeDir="false" afterPath="$PROJECT_DIR$/2cam/2cams.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/2cam/2cams_novis.py" beforeDir="false" afterPath="$PROJECT_DIR$/2cam/2cams_novis.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/2cam/2cams_plotly.py" beforeDir="false" afterPath="$PROJECT_DIR$/2cam/2cams_plotly.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/2cam/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/2cam/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/DepthCamera_2024-10-30-09-31-05.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/DepthCapture_2024-10-30-09-31-05.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ZEDCameraSystem.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/matching.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/myplot.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/point_cloud_processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/object_detection_and_point_cloud_processing.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/yolo11m-seg.pt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Capture_Pointcloud.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -106,7 +91,7 @@
       <recent name="$PROJECT_DIR$/Plotly" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.main">
+  <component name="RunManager" selected="Python.2cams">
     <configuration name="2cams" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="RT-3D-Reconstruction" />
       <option name="ENV_FILES" value="" />
@@ -293,11 +278,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.2cams" />
         <item itemvalue="Python.main" />
         <item itemvalue="Python.yolo11_tracking" />
         <item itemvalue="Python.rt_tracking_plotly" />
         <item itemvalue="Python.2cams_plotly" />
-        <item itemvalue="Python.2cams" />
       </list>
     </recent_temporary>
   </component>
@@ -340,7 +325,7 @@
       <workItem from="1731933597801" duration="420000" />
       <workItem from="1731934454379" duration="448000" />
       <workItem from="1731934916756" duration="4863000" />
-      <workItem from="1732000905607" duration="19037000" />
+      <workItem from="1732000905607" duration="19208000" />
     </task>
     <servers />
   </component>
