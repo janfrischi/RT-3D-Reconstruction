@@ -211,7 +211,7 @@ def main():
                 imgsz=640, # Lower input resolution for faster inference
                 max_det=20,
                 vid_stride = 5,
-                classes=[39,73], # Classes to detect
+                classes=[0, 39, 41, 62, 64, 66, 73],
                 half=True,
                 persist=True,
                 retina_masks=True,

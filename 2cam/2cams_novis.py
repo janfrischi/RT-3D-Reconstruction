@@ -34,7 +34,7 @@ class_names = {0: "Person",
 
 # Erode the mask to remove background noise, since masks aren't perfect
 def erode_mask(mask, iterations=1):
-    kernel = np.ones((10, 10), np.uint8)
+    kernel = np.ones((12, 12), np.uint8)
     eroded_mask = cv2.erode(mask, kernel, iterations=iterations)
     return eroded_mask
 
@@ -60,7 +60,7 @@ def convert_mask_to_3d_points(mask_indices, depth_map, cx, cy, fx, fy, device='c
     # Return a tensor of shape (N, 3) containing the 3D coordinates
     return torch.stack((x_coords, y_coords, z_coords), dim=-1)
 
-# # Downsample a point cloud using voxel downsampling
+# Downsample a point cloud using voxel downsampling
 # def downsample_point_cloud(point_cloud, voxel_size=0.005):
 #     # Convert the numpy array to an Open3D point cloud
 #     pcd = o3d.geometry.PointCloud()
@@ -71,6 +71,7 @@ def convert_mask_to_3d_points(mask_indices, depth_map, cx, cy, fx, fy, device='c
 #     downsampled_points = np.asarray(downsampled_pcd.points)
 #     return downsampled_points
 
+# Using this implementation we gain an additional 5fps
 def downsample_point_cloud(point_cloud, voxel_size=0.005):
     # Convert the numpy array to an Open3D point cloud
     pcd = o3d.t.geometry.PointCloud(o3c.Tensor(point_cloud, device=o3c.Device("CUDA:0")))
@@ -78,31 +79,23 @@ def downsample_point_cloud(point_cloud, voxel_size=0.005):
     downsampled_points = downsampled_pcd.point.positions.cpu().numpy()
     return downsampled_points
 
+
+def filter_outliers_sor(point_cloud, nb_neighbors=20, std_ratio=5):
+    # Convert the numpy array to an Open3D point cloud
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(point_cloud)
+
+    # Apply statistical outlier removal
+    filtered_pcd, ind = pcd.remove_statistical_outlier(nb_neighbors=nb_neighbors, std_ratio=std_ratio)
+
+    # Convert back to numpy array
+    filtered_points = np.asarray(filtered_pcd.points)
+    return filtered_points
+
+
 # Returns true if the two point clouds are equal
 def point_clouds_equal(pc1, pc2):
     return np.array_equal(pc1, pc2)
-
-# Converts a point cloud into a voxel grid
-def voxelize_point_cloud(point_cloud, voxel_size=0.1):
-    pcd = o3d.geometry.PointCloud()
-    pcd.points = o3d.utility.Vector3dVector(point_cloud)
-    voxel_grid = o3d.geometry.VoxelGrid.create_from_point_cloud(pcd, voxel_size=voxel_size)
-    return voxel_grid
-
-# Compute the Intersection over Union (IoU) between two voxel grids
-def compute_iou(voxel_grid1, voxel_grid2):
-    # Extract voxel coordinates
-    voxels1 = set(map(tuple, np.asarray([v.grid_index for v in voxel_grid1.get_voxels()])))
-    voxels2 = set(map(tuple, np.asarray([v.grid_index for v in voxel_grid2.get_voxels()])))
-
-    # Compute intersection and union
-    intersection = len(voxels1 & voxels2)
-    union = len(voxels1 | voxels2)
-
-    if union == 0:
-        return 0.0
-    else:
-        return intersection / union
 
 # Helper function to visualize a point cloud
 def visualize_point_cloud(point_cloud, title="Point Cloud"):
@@ -149,7 +142,7 @@ def fuse_point_clouds_centroid(point_clouds_camera1, point_clouds_camera2, dista
         # If there is only one point cloud with the same class ID from each camera we can directly fuse the pcs
         if len(pcs1) == 1 and len(pcs2) == 1:
             # Concatenate the point clouds along the vertical axis
-            fused_pc = np.vstack((pcs1[0], pcs2[0]))
+            fused_pc = filter_outliers_sor(np.vstack((pcs1[0], pcs2[0])))
             fused_point_clouds.append((fused_pc, class_id))
             print(f"Directly fused single object with class_id {class_id}")
 
@@ -175,7 +168,7 @@ def fuse_point_clouds_centroid(point_clouds_camera1, point_clouds_camera2, dista
                 # If a match was found, fuse the point clouds
                 if best_match is not None:
                     # Concatenate the point clouds along the vertical axis
-                    fused_pc = np.vstack((pc1, best_match))
+                    fused_pc = filter_outliers_sor(np.vstack((pc1, best_match)))
                     fused_point_clouds.append((fused_pc, class_id))
                     # Remove the matched point cloud from the list of point clouds from camera 2
                     pcs2 = [pc for pc in pcs2 if not point_clouds_equal(pc, best_match)]
@@ -193,93 +186,6 @@ def fuse_point_clouds_centroid(point_clouds_camera1, point_clouds_camera2, dista
 
     return class_dict1, class_dict2, pcs1, pcs2, fused_point_clouds
 
-# Function to fuse the point clouds based on IoU
-# def fuse_point_clouds(point_clouds_camera1, point_clouds_camera2, voxel_size = 0.05, iou_threshold=0.02):
-#     # Group the point clouds by the class ID
-#     # The class dicts are of the form: {class_id: [point_cloud1, point_cloud2, ...]}
-#
-#     class_dict1 = {}
-#     class_dict2 = {}
-#
-#     # point_clouds_camera1 = [(pc, class_id), ...] is a list of tuples containing the point cloud and the class ID
-#     # Iterate over each tuple and group the point clouds by the class ID
-#     for pc, class_id in point_clouds_camera1:
-#         if class_id not in class_dict1:
-#             class_dict1[class_id] = [] # Class ID is the key and the value is a list of point clouds
-#         class_dict1[class_id].append(pc) # The current point cloud is appended to the list of point clouds for this class ID
-#
-#     # point_clouds_camera2 = [(pc, class_id), ...] is a list of tuples containing the point cloud and the class ID
-#     for pc, class_id in point_clouds_camera2:
-#         if class_id not in class_dict2:
-#             class_dict2[class_id] = []
-#         class_dict2[class_id].append(pc)
-#
-#     # Initialize the fused point cloud list
-#     fused_point_clouds = []
-#
-#     # Process each class ID
-#     # A set is a datastructure that doesn't contain duplicates
-#     for class_id in set(class_dict1.keys()).union(class_dict2.keys()):
-#         # Get the point clouds for the current class ID from both cameras
-#         pcs1 = class_dict1.get(class_id, [])
-#         pcs2 = class_dict2.get(class_id, [])
-#
-#         # If there is only one point cloud for each camera, we can directly fuse them without voxelization
-#         if len(pcs1) == 1 and len(pcs2) == 1:
-#             fused_pc = np.vstack((pcs1[0], pcs2[0]))
-#             fused_point_clouds.append((fused_pc, class_id))
-#             #print(f"Directly fused single object with class_id {class_id}")
-#             #visualize_point_cloud(fused_pc, title=f"Fused Point Cloud - Class {class_id}")
-#
-#         # TODO: Check whether this code actually works
-#         # If there are multiple detected objects for the same class ID, we need to perform IoU-based fusion
-#         else:
-#             for pc1 in pcs1:
-#                 matched = False # Flag to check if a match was found
-#                 best_iou = 0.0 # Initialize the best IoU to 0
-#                 best_match = None # Initialize the best match to None
-#
-#                 # Voxelize the point cloud from the camera 1
-#                 voxel_grid1 = voxelize_point_cloud(pc1, voxel_size=voxel_size)
-#                 # Visualize the voxelized point cloud
-#                 print(voxel_grid1)
-#                 print(f"\nVoxelized Point Cloud 1 - Class {class_id}")
-#                 visualize_point_cloud(pc1, title=f"Original PC1 - Class {class_id}")
-#
-#                 # Loop over the point clouds from camera 2 and find the best match based on IoU
-#                 for pc2 in pcs2:
-#                     # Voxelize the point cloud from the camera 2
-#                     voxel_grid2 = voxelize_point_cloud(pc2, voxel_size=voxel_size)
-#
-#                     # Calculate the IoZ between the voxel grids
-#                     iou = compute_iou(voxel_grid1, voxel_grid2)
-#                     print(f"Computed IoU with pc2 for Class {class_id}: {iou}")
-#
-#                     if iou > best_iou:
-#                         best_iou = iou
-#                         best_match = pc2 # This best match is then later stacked with the corresponding pc1
-#
-#                 # If a match was found, fuse the point clouds
-#                 if best_match is not None:
-#                     fused_pc = np.vstack((pc1, best_match))
-#                     fused_point_clouds.append((fused_pc, class_id)) # Append the tuple to the fused point clouds list
-#                     print(f"Fused based on IoU for class_id {class_id} with IoU={best_iou}")
-#                     visualize_point_cloud(fused_pc, title=f"Fused Point Cloud IoU - Class {class_id}")
-#                     # Remove the matched point cloud from the list of point clouds from camera 2
-#                     pcs2 = [pc for pc in pcs2 if not point_clouds_equal(pc, best_match)]
-#
-#                 # If no match was found, simply add the point cloud from camera 1 to the fused point clouds
-#                 else:
-#                     fused_point_clouds.append((pc1, class_id))
-#                     print(f"No match found for Class {class_id}. Added original pc1.")
-#
-#             # Add any remaining point clouds from camera 2 to the fused point clouds
-#             for pc2 in pcs2:
-#                 fused_point_clouds.append((pc2, class_id))
-#                 print(f"Remaining pc2 added for Class {class_id}")
-#
-#     return class_dict1, class_dict2, pcs1, pcs2, fused_point_clouds
-
 
 def main():
     # Check if CUDA is available and set the device
@@ -287,15 +193,11 @@ def main():
     print(f"Using device: {device}")
 
     # Load the pre-trained YOLOv11 model and move it to the device
-    model = YOLO("yolo11l-seg.pt").to(device)
+    model = YOLO("yolo11m-seg.pt").to(device)
 
     # Initialize the ZED camera objects
     zed1 = sl.Camera()
     zed2 = sl.Camera()
-
-    # Autoadjust gain and exposure for both cameras
-    #zed1.set_camera_settings(sl.VIDEO_SETTINGS.AEC_AGC, 1)  # Enable auto exposure and gain
-    #zed2.set_camera_settings(sl.VIDEO_SETTINGS.AEC_AGC, 1)  # Enable auto exposure and gain
 
     # Set the serial numbers of the cameras
     sn_cam1 = 33137761
@@ -342,14 +244,14 @@ def main():
     # Define the transformation matrices from the chessboard to the camera frames
     # These matrices can be obtained from the extrinsic calibration process
 
-    T_chess_cam1 = np.array([[0.6589, 0.4859, -0.5743, 0.5843],
-                             [-0.7523, 0.4250, -0.5035, 0.7739],
-                             [-0.0006, 0.7637, 0.6455, -0.7241],
+    T_chess_cam1 = np.array([[0.6653, 0.4827, -0.5696, 0.5868],
+                             [-0.7466, 0.4314, -0.5065, 0.7718],
+                             [0.0012, 0.7622, 0.6473, -0.7245],
                              [0.0000, 0.0000, 0.0000, 1.0000]])
 
-    T_chess_cam2 = np.array([[-0.3884, -0.5786, 0.7172, -0.6803],
-                             [0.9215, -0.2497, 0.2976, -0.1952],
-                             [0.0068, 0.7765, 0.6301, -0.6902],
+    T_chess_cam2 = np.array([[0.3981, -0.6302, 0.6666, -0.5739],
+                             [0.9173, 0.2688, -0.2937, 0.3581],
+                             [0.0059, 0.7284, 0.6851, -0.6835],
                              [0.0000, 0.0000, 0.0000, 1.0000]])
 
     T_robot_chess = np.array([[-1.0000, 0.0000, 0.0000, 0.3580],
@@ -367,11 +269,6 @@ def main():
 
     origin_cam1 = T_robot_cam1[:3, 3]
     origin_cam2 = T_robot_cam2[:3, 3]
-
-    print(f"Rotation matrix from robot frame to camera frame 1:\n{rotation_robot_cam1}")
-    print(f"Rotation matrix from robot frame to camera frame 2:\n{rotation_robot_cam2}")
-    print(f"Translation vector from robot frame to camera frame 1: {origin_cam1}")
-    print(f"Translation vector from robot frame to camera frame 2: {origin_cam2}")
 
     distance_cam1 = np.linalg.norm(origin_cam1 - np.array([0, 0, 0]))
     distance_cam2 = np.linalg.norm(origin_cam2 - np.array([0, 0, 0]))
@@ -421,12 +318,11 @@ def main():
             results1 = model.track(
                 source=frame1,
                 imgsz=640,
-                vid_stride = 30,
-                classes=[39, 73],
-                half=True,
+                vid_stride = 15,
+                classes=[39, 41],
                 persist=True,
                 retina_masks=True,
-                conf=0.3,
+                conf=0.4,
                 device=device,
                 tracker="ultralytics/cfg/trackers/bytetrack.yaml"
             )
@@ -434,12 +330,11 @@ def main():
             results2 = model.track(
                 source=frame2,
                 imgsz=640,
-                vid_stride=30,
-                classes=[39, 73],
-                half=True,
+                vid_stride=15,
+                classes=[39, 41],
                 persist=True,
                 retina_masks=True,
-                conf=0.3,
+                conf=0.4,
                 device=device,
                 tracker="ultralytics/cfg/trackers/bytetrack.yaml"
             )
@@ -475,7 +370,7 @@ def main():
                     mask_indices = np.argwhere(mask > 0)
 
                     # Calculate the 3D points using the mask indices and depth map -> This operation is done on the GPU
-                    with torch.cuda.amp.autocast():
+                    with torch.amp.autocast('cuda'):
                         points_3d = convert_mask_to_3d_points(mask_indices, depth_map1, cx1, cy1, fx1, fy1)
 
                     if points_3d.size(0) > 0:
@@ -483,7 +378,7 @@ def main():
                         point_cloud_cam1 = points_3d.cpu().numpy()
                         point_cloud_cam1_transformed = np.dot(rotation_robot_cam1, point_cloud_cam1.T).T + origin_cam1
                         # Downsampling the point cloud
-                        point_cloud_cam1_transformed = downsample_point_cloud(point_cloud_cam1_transformed, voxel_size=0.005)
+                        point_cloud_cam1_transformed = downsample_point_cloud(point_cloud_cam1_transformed, voxel_size=0.01)
                         # Add the point cloud and class ID to this cameras point cloud list
                         point_clouds_camera1.append((point_cloud_cam1_transformed, int(class_ids1[i])))
                         print(f"Class ID: {class_ids1[i]} ({class_names[class_ids1[i]]}) in Camera Frame 1")
@@ -504,12 +399,12 @@ def main():
                     if points_3d.size(0) > 0:
                         point_cloud_cam2 = points_3d.cpu().numpy()
                         point_cloud_cam2_transformed = np.dot(rotation_robot_cam2, point_cloud_cam2.T).T + origin_cam2
+
                         # Downsampling the point cloud
-                        point_cloud_cam2_transformed = downsample_point_cloud(point_cloud_cam2_transformed, voxel_size=0.005)
+                        point_cloud_cam2_transformed = downsample_point_cloud(point_cloud_cam2_transformed, voxel_size=0.01)
                         point_clouds_camera2.append((point_cloud_cam2_transformed, int(class_ids2[i])))
                         print(f"Class ID: {class_ids2[i]} ({class_names[class_ids2[i]]}) in Camera Frame 2")
 
-            # TODO: Fusing the point clouds from both cameras based on IoU, or centroid matching
             dict1, dict2, pcs1, pcs2, fused_pc = fuse_point_clouds_centroid(point_clouds_camera1, point_clouds_camera2, distance_threshold=0.3)
 
             # Increment the frame count and calculate the FPS
@@ -536,6 +431,7 @@ def main():
 
             # Concatenate the frames horizontally
             combined_frame = cv2.hconcat([annotated_frame1, annotated_frame2])
+            combined_frame = cv2.resize(combined_frame, (combined_frame.shape[1] // 2, combined_frame.shape[0] // 2))
             cv2.imshow("YOLO11 Segmentation+Tracking", combined_frame)
 
             # Clear the point clouds from both cameras
