@@ -5,12 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="451445bc-3695-4851-ba1f-d170bd89a032" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/RT-3D-Reconstruction.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/RT-3D-Reconstruction.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/1cam/rt_tracking_plotly.py" beforeDir="false" afterPath="$PROJECT_DIR$/1cam/rt_tracking_plotly.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/get_python_api.py" beforeDir="false" afterPath="$PROJECT_DIR$/get_python_api.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pyzed-4.1-cp310-cp310-linux_x86_64.whl" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -95,7 +90,7 @@
       <recent name="$PROJECT_DIR$/Plotly" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.main">
+  <component name="RunManager" selected="Python.rt-tracking">
     <configuration name="2cams" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="RT-3D-Reconstruction" />
       <option name="ENV_FILES" value="" />
@@ -213,9 +208,9 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.rt-tracking" />
         <item itemvalue="Python.main" />
         <item itemvalue="Python.2cams" />
-        <item itemvalue="Python.rt-tracking" />
         <item itemvalue="Python.object_detection_and_point_cloud_processing" />
         <item itemvalue="Python.yolo11_tracking" />
       </list>
@@ -261,7 +256,7 @@
       <workItem from="1731934454379" duration="448000" />
       <workItem from="1731934916756" duration="4863000" />
       <workItem from="1732000905607" duration="23182000" />
-      <workItem from="1732519348880" duration="1626000" />
+      <workItem from="1732519348880" duration="2395000" />
     </task>
     <servers />
   </component>
@@ -316,6 +311,6 @@
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$rt_tracking_2cams.coverage" NAME="rt-tracking-2cams Coverage Results" MODIFIED="1731922320443" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/2cam" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$rt_tracking_benchmarking2.coverage" NAME="rt-tracking-benchmarking2 Coverage Results" MODIFIED="1730728964131" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$main.coverage" NAME="main Coverage Results" MODIFIED="1732520633079" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/2cam" />
-    <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$rt_tracking.coverage" NAME="rt-tracking Coverage Results" MODIFIED="1732520312086" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/1cam" />
+    <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$rt_tracking.coverage" NAME="rt-tracking Coverage Results" MODIFIED="1732521353886" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/1cam" />
   </component>
 </project>
