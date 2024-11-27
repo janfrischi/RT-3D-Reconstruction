@@ -108,34 +108,49 @@ def visualize_point_cloud(point_cloud, title="Point Cloud"):
 def calculate_centroid(point_cloud):
     return np.mean(point_cloud, axis=0)
 
-def retrieve_point_cloud_workspace(zed, point_cloud_mat, resolution):
-    """
-    Retrieve the point cloud from a ZED camera and convert it to a NumPy array.
+# Crop a point cloud using NumPy, ideally the point_cloud should be transformed to the robot base frame
+def crop_point_cloud_numpy(point_cloud, x_bounds, y_bounds, z_bounds):
+    mask = (
+        (point_cloud[:, 0] >= x_bounds[0]) & (point_cloud[:, 0] <= x_bounds[1]) &
+        (point_cloud[:, 1] >= y_bounds[0]) & (point_cloud[:, 1] <= y_bounds[1]) &
+        (point_cloud[:, 2] >= z_bounds[0]) & (point_cloud[:, 2] <= z_bounds[1])
+    )
+    # Apply the mask to the point cloud and return the cropped point cloud
+    return point_cloud[mask]
 
-    Args:
-        zed (sl.Camera): The ZED camera object.
-        point_cloud_mat (sl.Mat): The ZED Mat object for storing the point cloud.
-        resolution (sl.Resolution): The resolution of the point cloud.
 
-    Returns:
-        np.ndarray: The retrieved point cloud as a NumPy array of shape (N, 3).
-    """
-    # Grab a frame from the ZED camera
+def retrieve_process_point_cloud_workspace(zed, point_cloud_mat, resolution, rotation_cam, origin_cam, downsampling_factor=10):
+    # Grab a frame from the ZED camera, if successful the rest of the code will be executed
     if zed.grab() == sl.ERROR_CODE.SUCCESS:
         # Retrieve the point cloud with color
-        zed.retrieve_measure(point_cloud_mat, sl.MEASURE.XYZRGBA, sl.MEM.CPU, resolution)
-
-        # Convert the point cloud to a NumPy array
-        point_cloud_workspace_np = point_cloud_mat.get_data()[:, :, :3]  # Extract only XYZ, ignoring RGBA
-
-        # Reshape to (N, 3), where N is the number of points
+        zed.retrieve_measure(point_cloud_mat, measure=sl.MEASURE.XYZRGBA, type=sl.MEM.CPU, resolution=resolution)
+        # Convert the point cloud to a NumPy array, get.data() converts the Mat object to a numpy array
+        point_cloud_workspace_np = point_cloud_mat.get_data()[:, :, :3]
+        # Flatten the 2D grid of points into a 1D array of shape (N, 3)
         point_cloud_workspace_np = point_cloud_workspace_np.reshape(-1, 3)
-
         # Remove invalid points (NaN or Inf values) -> Only keep valid points for further processing
-        # The any(axis=1) method checks if any value in a row is NaN or Inf, ~ is the negation operator. True becomes False and vice versa
         valid_mask_workspace = ~np.isnan(point_cloud_workspace_np).any(axis=1) & ~np.isinf(point_cloud_workspace_np).any(axis=1)
+        # Filter out the invalid points and get the down sampled point cloud in numpy format
+        point_cloud_workspace_np = point_cloud_workspace_np[valid_mask_workspace]
 
-        return point_cloud_workspace_np[valid_mask_workspace]
+        # Step1: Transform the filtered point cloud to the robot base frame
+        point_cloud_workspace_np_transformed = np.dot(rotation_cam, point_cloud_workspace_np.T).T + origin_cam
+
+        # Step2: Crop the point cloud
+        # TODO: Bounds can easily be identified when the pointclouds are transformed to the robot base frame
+        x_bounds_baseframe = (-2.5, 2.5)
+        y_bounds_baseframe = (-1.5, 1.5)
+        z_bounds_baseframe = (0, 2.5)
+
+        point_cloud_workspace_np_cropped = crop_point_cloud_numpy(point_cloud_workspace_np_transformed, x_bounds_baseframe, y_bounds_baseframe, z_bounds_baseframe)
+        # TODO: Replace this with voxelized downsampling in the future
+        # Step3: Uniformly downsample the point cloud
+        point_cloud_workspace_downsampled = point_cloud_workspace_np_cropped[::downsampling_factor]
+
+        # Step4: Filter out the outliers using Statistical Outlier Removal
+        #downsampled_point_cloud = filter_outliers_sor(downsampled_point_cloud)
+
+        return point_cloud_workspace_downsampled
 
     return None
 
@@ -226,6 +241,7 @@ def fuse_point_clouds_centroid(point_clouds_camera1, point_clouds_camera2, dista
 
 def main():
     # Check if CUDA is available and set the device
+    global point_cloud_ws_cam1_transformed, point_cloud_ws_cam2_transformed
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f"Using device: {device}")
 
@@ -245,7 +261,7 @@ def main():
     init_params1.set_from_serial_number(sn_cam1)
     init_params1.camera_resolution = sl.RESOLUTION.HD720
     init_params1.camera_fps = 30
-    init_params1.depth_mode = sl.DEPTH_MODE.NEURAL # TODO: Check what if NEURAL and NEURAL_PLUS differ in performance
+    init_params1.depth_mode = sl.DEPTH_MODE.NEURAL
     init_params1.depth_minimum_distance = 0.4
     init_params1.coordinate_units = sl.UNIT.METER
 
@@ -256,6 +272,7 @@ def main():
     init_params2.camera_fps = 30
     init_params2.depth_mode = sl.DEPTH_MODE.NEURAL
     init_params2.depth_minimum_distance = 0.4
+    #init_params2.coordinate_system = sl.COORDINATE_SYSTEM.RIGHT_HANDED_Y_UP # Convention for OpenGl TODO: Check if this is correct?
     init_params2.coordinate_units = sl.UNIT.METER
 
     # Check if the cameras were successfully opened
@@ -313,6 +330,14 @@ def main():
     print(f"Distance from robot frame to camera frame 1: {distance_cam1:.4f} meters")
     print(f"Distance from robot frame to camera frame 2: {distance_cam2:.4f} meters")
 
+    # Set the resolution for the point clouds
+    #resolution = sl.Resolution(1280, 720)
+    resolution = sl.Resolution(640, 360)
+
+    # Create point cloud objects to hold data of the workspace
+    point_cloud1_ws = sl.Mat(resolution.width, resolution.height, sl.MAT_TYPE.F32_C4, sl.MEM.CPU)
+    point_cloud2_ws = sl.Mat(resolution.width, resolution.height, sl.MAT_TYPE.F32_C4, sl.MEM.CPU)
+
     # Initialize the image and depth map variables for both cameras
     image1 = sl.Mat()
     depth1 = sl.Mat()
@@ -336,11 +361,37 @@ def main():
         start_time = time.time()
 
         if zed1.grab() == sl.ERROR_CODE.SUCCESS and zed2.grab() == sl.ERROR_CODE.SUCCESS:
-            # Retrieve the images and depth maps from both cameras
+            # Retrieve the images from both cameras
             zed1.retrieve_image(image1, sl.VIEW.LEFT)
             zed2.retrieve_image(image2, sl.VIEW.LEFT)
+
+            # Retrieve the depth maps from both cameras
             depth_retrieval_result1 = zed1.retrieve_measure(depth1, sl.MEASURE.DEPTH)
             depth_retrieval_result2 = zed2.retrieve_measure(depth2, sl.MEASURE.DEPTH)
+
+            # Retrieve point clouds of the workspace from both cameras
+            point_cloud_ws_cam1 = retrieve_process_point_cloud_workspace(zed1, point_cloud1_ws, resolution, rotation_robot_cam1, origin_cam1, downsampling_factor=10)
+            point_cloud_ws_cam2 = retrieve_process_point_cloud_workspace(zed2, point_cloud2_ws, resolution, rotation_robot_cam2, origin_cam2, downsampling_factor=10)
+
+            # Display the pointcloud using open3d
+            # visualize_point_cloud(point_cloud_ws_cam1, title=f"Point Cloud Camera 1 - SN:{sn_cam1}")
+            # visualize_point_cloud(point_cloud_ws_cam2, title=f"Point Cloud Camera 2 - SN:{sn_cam2}")
+
+            # Transform the point clouds of the workspace to the robot base frame
+            if point_cloud_ws_cam1 is not None:
+                # Transform the point cloud to the robot base frame
+                point_cloud_ws_cam1_transformed = np.dot(rotation_robot_cam1, point_cloud_ws_cam1.T).T + origin_cam1
+                print(f"Camera 1: Down sampled Point Cloud shape: {point_cloud_ws_cam1_transformed.shape}")
+
+            if point_cloud_ws_cam2 is not None:
+                # Transform the point cloud to the robot base frame
+                point_cloud_ws_cam2_transformed = np.dot(rotation_robot_cam2, point_cloud_ws_cam2.T).T + origin_cam2
+                print(f"Camera 2: Down sampled Point Cloud shape: {point_cloud_ws_cam2_transformed.shape}")
+
+            if point_cloud_ws_cam1 is not None and point_cloud_ws_cam2 is not None:
+                # Fuse the transformed point clouds -> fused_point_cloud_ws is the point cloud of the complete workspace
+                fused_point_cloud_ws = np.vstack((point_cloud_ws_cam1_transformed, point_cloud_ws_cam2_transformed))
+                print(f"Fused Point Cloud shape: {fused_point_cloud_ws.shape}")
 
             # Check if the depth maps were successfully retrieved
             if depth_retrieval_result1 != sl.ERROR_CODE.SUCCESS or depth_retrieval_result2 != sl.ERROR_CODE.SUCCESS:
@@ -349,6 +400,7 @@ def main():
 
             frame1 = image1.get_data()
             frame2 = image2.get_data()
+
             # Convert the frames from RGBA to RGB as this is the format expected by OPENCV
             frame1 = cv2.cvtColor(frame1, cv2.COLOR_BGRA2BGR)
             frame2 = cv2.cvtColor(frame2, cv2.COLOR_BGRA2BGR)
@@ -432,7 +484,7 @@ def main():
                     mask = erode_mask(mask, iterations=1)
                     mask_indices = np.argwhere(mask > 0)
 
-                    with torch.cuda.amp.autocast():
+                    with torch.amp.autocast('cuda'):
                         points_3d = convert_mask_to_3d_points(mask_indices, depth_map2, cx2, cy2, fx2, fy2)
 
                     if points_3d.size(0) > 0:

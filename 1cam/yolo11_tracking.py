@@ -23,7 +23,7 @@ def main():
     init_params = sl.InitParameters()
     init_params.camera_resolution = sl.RESOLUTION.HD720  # Set camera resolution
     init_params.camera_fps = 60  # Set camera FPS
-    init_params.depth_mode = sl.DEPTH_MODE.PERFORMANCE # Enable depth sensing - mode can be PERFORMANCE, MEDIUM, QUALITY
+    init_params.depth_mode = sl.DEPTH_MODE.PERFORMANCE # Enable depth_sensing - mode can be PERFORMANCE, MEDIUM, QUALITY
     init_params.depth_minimum_distance = 0.3
     init_params.coordinate_units = sl.UNIT.METER  # Set units to meters
 

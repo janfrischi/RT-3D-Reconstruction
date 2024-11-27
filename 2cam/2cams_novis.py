@@ -60,6 +60,7 @@ def convert_mask_to_3d_points(mask_indices, depth_map, cx, cy, fx, fy, device='c
     # Return a tensor of shape (N, 3) containing the 3D coordinates
     return torch.stack((x_coords, y_coords, z_coords), dim=-1)
 
+# TODO: This approach was not suitable for the current implementation as the objects don't overlap enough for the IoU metric to be useful
 # Downsample a point cloud using voxel downsampling
 # def downsample_point_cloud(point_cloud, voxel_size=0.005):
 #     # Convert the numpy array to an Open3D point cloud
@@ -136,6 +137,7 @@ def fuse_point_clouds_centroid(point_clouds_camera1, point_clouds_camera2, dista
 
     # Process each class ID
     # Get all the unique class IDs from both cameras
+    # class_dict1.keys() returns a set of all the keys "class IDs" in the dictionary
     for class_id in set(class_dict1.keys()).union(class_dict2.keys()):
         # Get the point clouds for the current class ID from both cameras
         pcs1 = class_dict1.get(class_id, []) # pcs1 has the following format: [point_cloud1, point_cloud2, ...]
@@ -148,16 +150,16 @@ def fuse_point_clouds_centroid(point_clouds_camera1, point_clouds_camera2, dista
             fused_point_clouds.append((fused_pc, class_id))
             print(f"Directly fused single object with class_id {class_id}")
 
+        # If there are multiple point clouds with the same class ID from each camera, we need to find the best match
         else:
             for pc1 in pcs1:
                 best_distance = float('inf')
                 best_match = None
 
                 # Calculate the centroid of the point cloud from camera 1
-                # TODO: Check if the pc has to be downsampled before calculating the centroid
                 centroid1 = calculate_centroid(pc1)
 
-                # Loop over all the point clouds from camera 2 and find the best match based on centroid distance
+                # Loop over all the point clouds from camera 2 with the same ID and find the best match based on centroid distance
                 for pc2 in pcs2:
                     centroid2 = calculate_centroid(pc2)
                     # Calculate the Euclidean distance / L2 norm between the centroids
@@ -169,10 +171,10 @@ def fuse_point_clouds_centroid(point_clouds_camera1, point_clouds_camera2, dista
 
                 # If a match was found, fuse the point clouds
                 if best_match is not None:
-                    # Concatenate the point clouds along the vertical axis
+                    # Concatenate the point clouds along the vertical axis and filter out the outliers
                     fused_pc = filter_outliers_sor(np.vstack((pc1, best_match)))
                     fused_point_clouds.append((fused_pc, class_id))
-                    # Remove the matched point cloud from the list of point clouds from camera 2
+                    # Remove the matched point cloud from the list of point clouds from camera 2 to prevent duplicate fusion
                     pcs2 = [pc for pc in pcs2 if not point_clouds_equal(pc, best_match)]
                     print(f"Fused based on centroid distance {best_distance} for class_id {class_id}")
 
@@ -186,7 +188,7 @@ def fuse_point_clouds_centroid(point_clouds_camera1, point_clouds_camera2, dista
                 fused_point_clouds.append((pc2, class_id))
                 print(f"Remaining pc2 added for Class {class_id}")
 
-    return class_dict1, class_dict2, pcs1, pcs2, fused_point_clouds
+    return pcs1, pcs2, fused_point_clouds
 
 
 def main():
@@ -283,6 +285,8 @@ def main():
     depth1 = sl.Mat()
     image2 = sl.Mat()
     depth2 = sl.Mat()
+
+    # Initialize the key variable to check for the 'q' key press
     key = ''
 
     # Create a window to display the output
@@ -381,7 +385,7 @@ def main():
                         point_cloud_cam1_transformed = np.dot(rotation_robot_cam1, point_cloud_cam1.T).T + origin_cam1
                         # Downsampling the point cloud
                         point_cloud_cam1_transformed = downsample_point_cloud(point_cloud_cam1_transformed, voxel_size=0.01)
-                        # Add the point cloud and class ID to this cameras point cloud list
+                        # Add the downsampled point cloud and class ID to this cameras point cloud list
                         point_clouds_camera1.append((point_cloud_cam1_transformed, int(class_ids1[i])))
                         print(f"Class ID: {class_ids1[i]} ({class_names[class_ids1[i]]}) in Camera Frame 1")
 
@@ -402,12 +406,13 @@ def main():
                         point_cloud_cam2 = points_3d.cpu().numpy()
                         point_cloud_cam2_transformed = np.dot(rotation_robot_cam2, point_cloud_cam2.T).T + origin_cam2
 
-                        # Downsampling the point cloud
+                        # Down sampling the point cloud
                         point_cloud_cam2_transformed = downsample_point_cloud(point_cloud_cam2_transformed, voxel_size=0.01)
                         point_clouds_camera2.append((point_cloud_cam2_transformed, int(class_ids2[i])))
                         print(f"Class ID: {class_ids2[i]} ({class_names[class_ids2[i]]}) in Camera Frame 2")
 
-            dict1, dict2, pcs1, pcs2, fused_pc = fuse_point_clouds_centroid(point_clouds_camera1, point_clouds_camera2, distance_threshold=0.3)
+            # Retrieve the individual point clouds and the fused point cloud
+            pcs1, pcs2, fused_pc = fuse_point_clouds_centroid(point_clouds_camera1, point_clouds_camera2, distance_threshold=0.3)
 
             # Increment the frame count and calculate the FPS
             frame_count += 1
