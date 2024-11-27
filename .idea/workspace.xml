@@ -6,13 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="451445bc-3695-4851-ba1f-d170bd89a032" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/1cam/yolo11_tracking.py" beforeDir="false" afterPath="$PROJECT_DIR$/1cam/yolo11_tracking.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/2cam/2cams_novis.py" beforeDir="false" afterPath="$PROJECT_DIR$/2cam/2cams_novis.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/2cam/2cams_novis_extended.py" beforeDir="false" afterPath="$PROJECT_DIR$/2cam/2cams_novis_extended.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/depth_sensing/get_pointcloud.py" beforeDir="false" afterPath="$PROJECT_DIR$/depth_sensing/get_pointcloud.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/depth_sensing/get_pointcloud_2cams.py" beforeDir="false" afterPath="$PROJECT_DIR$/depth_sensing/get_pointcloud_2cams.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/depth_sensing/tes.py" beforeDir="false" afterPath="$PROJECT_DIR$/depth_sensing/tes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -282,7 +276,7 @@
       <workItem from="1731934916756" duration="4863000" />
       <workItem from="1732000905607" duration="23182000" />
       <workItem from="1732519348880" duration="2938000" />
-      <workItem from="1732522298802" duration="40623000" />
+      <workItem from="1732522298802" duration="46976000" />
     </task>
     <servers />
   </component>
@@ -318,7 +312,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/2cam/2cams_novis_extended.py</url>
-          <line>525</line>
+          <line>500</line>
           <option name="timeStamp" value="17" />
         </line-breakpoint>
       </breakpoints>
@@ -339,7 +333,7 @@
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$rt_tracking_edit.coverage" NAME="rt-tracking-edit Coverage Results" MODIFIED="1730812670845" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$test.coverage" NAME="test Coverage Results" MODIFIED="1730885861830" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$2cams.coverage" NAME="2cams Coverage Results" MODIFIED="1732522234918" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/2cam" />
-    <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$2cams_novis_extended.coverage" NAME="2cams_novis_extended Coverage Results" MODIFIED="1732696279210" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/2cam" />
+    <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$2cams_novis_extended.coverage" NAME="2cams_novis_extended Coverage Results" MODIFIED="1732703565256" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/2cam" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$rt_tracking_novis.coverage" NAME="rt-tracking-novis Coverage Results" MODIFIED="1730732826785" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$tes.coverage" NAME="tes Coverage Results" MODIFIED="1732626410170" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/depth_sensing" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$Multithreading_2cams.coverage" NAME="Multithreading-2cams Coverage Results" MODIFIED="1730797521922" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />

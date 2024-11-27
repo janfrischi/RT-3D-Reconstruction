@@ -3,11 +3,9 @@ import pyzed.sl as sl
 import cv2
 import time
 import torch
-import random
 import open3d as o3d
 import open3d.core as o3c
-import cProfile
-import pstats
+
 
 from jsonschema.exceptions import best_match
 from ultralytics import YOLO
@@ -45,10 +43,10 @@ def convert_mask_to_3d_points(mask_indices, depth_map, cx, cy, fx, fy, device='c
     # Extract the u, v coordinates from the mask indices
     u_coords = mask_indices[:, 1]
     v_coords = mask_indices[:, 0]
-    # Extract the depth values from the depth map and move to GPU
+    # Extract the necessary depth values from the depth map and move to GPU
     depth_values = depth_map[v_coords, u_coords].to(device)
     # Create a mask to filter out invalid depth values
-    valid_mask = (depth_values > 0) & ~torch.isnan(depth_values)
+    valid_mask = (depth_values > 0) & ~torch.isnan(depth_values) & ~torch.isinf(depth_values)
     # Filter out invalid depth values
     u_coords = u_coords[valid_mask]
     v_coords = v_coords[valid_mask]
@@ -296,7 +294,6 @@ def main():
     cx2, cy2 = calibration_params2.left_cam.cx, calibration_params2.left_cam.cy
 
     # Define the transformation matrices from the chessboard to the camera frames
-    # These matrices can be obtained from the extrinsic calibration process
 
     T_chess_cam1 = np.array([[0.6653, 0.4827, -0.5696, 0.5868],
                              [-0.7466, 0.4314, -0.5065, 0.7718],
@@ -308,6 +305,7 @@ def main():
                              [0.0059, 0.7284, 0.6851, -0.6835],
                              [0.0000, 0.0000, 0.0000, 1.0000]])
 
+    # This transformation matrix is given by the geometry of the mount and the chessboard
     T_robot_chess = np.array([[-1.0000, 0.0000, 0.0000, 0.3580],
                               [0.0000, 1.0000, 0.0000, 0.0300],
                               [0.0000, 0.0000, -1.0000, 0.0060],
@@ -334,15 +332,15 @@ def main():
     #resolution = sl.Resolution(1280, 720)
     resolution = sl.Resolution(640, 360)
 
-    # Create point cloud objects to hold data of the workspace
-    point_cloud1_ws = sl.Mat(resolution.width, resolution.height, sl.MAT_TYPE.F32_C4, sl.MEM.CPU)
-    point_cloud2_ws = sl.Mat(resolution.width, resolution.height, sl.MAT_TYPE.F32_C4, sl.MEM.CPU)
-
     # Initialize the image and depth map variables for both cameras
     image1 = sl.Mat()
     depth1 = sl.Mat()
     image2 = sl.Mat()
     depth2 = sl.Mat()
+
+    # Create point cloud objects to hold data of the workspace
+    point_cloud1_ws = sl.Mat(resolution.width, resolution.height, sl.MAT_TYPE.F32_C4, sl.MEM.CPU)
+    point_cloud2_ws = sl.Mat(resolution.width, resolution.height, sl.MAT_TYPE.F32_C4, sl.MEM.CPU)
 
     # Initialize the key variable to check for the 'q' key press
     key = ''
@@ -352,61 +350,47 @@ def main():
     fps_values = []
     frame_count = 0
 
-    # Initialize lists to store the point clouds from both cameras, each point cloud is a tuple of the point cloud and the class ID
+    # Initialize lists to store the point clouds of the reconstructed objects from both cameras, each point cloud is a tuple of the point cloud and the class ID
     point_clouds_camera1 = []
     point_clouds_camera2 = []
 
     # Main loop to capture and process images from both cameras
     while key != ord('q'):
         start_time = time.time()
-
+        # Check if the cameras are successfully grabbing frames
         if zed1.grab() == sl.ERROR_CODE.SUCCESS and zed2.grab() == sl.ERROR_CODE.SUCCESS:
-            # Retrieve the images from both cameras
-            zed1.retrieve_image(image1, sl.VIEW.LEFT)
-            zed2.retrieve_image(image2, sl.VIEW.LEFT)
 
-            # Retrieve the depth maps from both cameras
-            depth_retrieval_result1 = zed1.retrieve_measure(depth1, sl.MEASURE.DEPTH)
-            depth_retrieval_result2 = zed2.retrieve_measure(depth2, sl.MEASURE.DEPTH)
-
-            # Retrieve point clouds of the workspace from both cameras
-            point_cloud_ws_cam1 = retrieve_process_point_cloud_workspace(zed1, point_cloud1_ws, resolution, rotation_robot_cam1, origin_cam1, downsampling_factor=10)
-            point_cloud_ws_cam2 = retrieve_process_point_cloud_workspace(zed2, point_cloud2_ws, resolution, rotation_robot_cam2, origin_cam2, downsampling_factor=10)
-
-            # Display the pointcloud using open3d
-            # visualize_point_cloud(point_cloud_ws_cam1, title=f"Point Cloud Camera 1 - SN:{sn_cam1}")
-            # visualize_point_cloud(point_cloud_ws_cam2, title=f"Point Cloud Camera 2 - SN:{sn_cam2}")
-
-            # Transform the point clouds of the workspace to the robot base frame
-            if point_cloud_ws_cam1 is not None:
-                # Transform the point cloud to the robot base frame
-                point_cloud_ws_cam1_transformed = np.dot(rotation_robot_cam1, point_cloud_ws_cam1.T).T + origin_cam1
-                print(f"Camera 1: Down sampled Point Cloud shape: {point_cloud_ws_cam1_transformed.shape}")
-
-            if point_cloud_ws_cam2 is not None:
-                # Transform the point cloud to the robot base frame
-                point_cloud_ws_cam2_transformed = np.dot(rotation_robot_cam2, point_cloud_ws_cam2.T).T + origin_cam2
-                print(f"Camera 2: Down sampled Point Cloud shape: {point_cloud_ws_cam2_transformed.shape}")
-
-            if point_cloud_ws_cam1 is not None and point_cloud_ws_cam2 is not None:
-                # Fuse the transformed point clouds -> fused_point_cloud_ws is the point cloud of the complete workspace
-                fused_point_cloud_ws = np.vstack((point_cloud_ws_cam1_transformed, point_cloud_ws_cam2_transformed))
-                print(f"Fused Point Cloud shape: {fused_point_cloud_ws.shape}")
-
-            # Check if the depth maps were successfully retrieved
-            if depth_retrieval_result1 != sl.ERROR_CODE.SUCCESS or depth_retrieval_result2 != sl.ERROR_CODE.SUCCESS:
-                print(f"Error retrieving depth: {depth_retrieval_result1}, {depth_retrieval_result2}")
-                continue
-
+            # Retrieve the images from both cameras and convert them to numpy arrays
+            zed1.retrieve_image(image1, view=sl.VIEW.LEFT)
+            zed2.retrieve_image(image2, view=sl.VIEW.LEFT)
             frame1 = image1.get_data()
             frame2 = image2.get_data()
-
             # Convert the frames from RGBA to RGB as this is the format expected by OPENCV
             frame1 = cv2.cvtColor(frame1, cv2.COLOR_BGRA2BGR)
             frame2 = cv2.cvtColor(frame2, cv2.COLOR_BGRA2BGR)
 
-            # Perform object detection and tracking on both frames
-            results1 = model.track(
+            # Retrieve the depth maps from both cameras and convert them to numpy arrays
+            depth_retrieval_result1 = zed1.retrieve_measure(depth1, measure=sl.MEASURE.DEPTH)
+            depth_retrieval_result2 = zed2.retrieve_measure(depth2, measure=sl.MEASURE.DEPTH)
+            zed_depth_np1 = depth1.get_data()
+            zed_depth_np2 = depth2.get_data()
+
+            # Retrieve point clouds of the workspace from both cameras, the retrieved point clouds are already transformed to the robot base frame
+            point_cloud_ws_cam1 = retrieve_process_point_cloud_workspace(zed1, point_cloud1_ws, resolution, rotation_robot_cam1, origin_cam1, downsampling_factor=10)
+            point_cloud_ws_cam2 = retrieve_process_point_cloud_workspace(zed2, point_cloud2_ws, resolution, rotation_robot_cam2, origin_cam2, downsampling_factor=10)
+            # Fuse the point clouds from both cameras
+            point_cloud_ws_fused = np.vstack((point_cloud_ws_cam1, point_cloud_ws_cam2))
+
+            print(f"Point Cloud Camera 1 shape: {point_cloud_ws_cam1.shape}")
+            print(f"Point Cloud Camera 2 shape: {point_cloud_ws_cam2.shape}")
+            print(f"Fused Point Cloud shape: {point_cloud_ws_fused.shape}")
+
+            # Display the point cloud
+            #visualize_point_cloud(point_cloud_ws_cam1, title=f"Point Cloud Camera 1 - SN:{sn_cam1}")
+            # visualize_point_cloud(point_cloud_ws_cam2, title=f"Point Cloud Camera 2 - SN:{sn_cam2}")
+
+            # Perform object detection/segmentation and tracking on both frames using YOLO11
+            yolo11_results1 = model.track(
                 source=frame1,
                 imgsz=640,
                 vid_stride = 15,
@@ -418,7 +402,7 @@ def main():
                 tracker="ultralytics/cfg/trackers/bytetrack.yaml"
             )
 
-            results2 = model.track(
+            yolo11_results2 = model.track(
                 source=frame2,
                 imgsz=640,
                 vid_stride=15,
@@ -430,47 +414,38 @@ def main():
                 tracker="ultralytics/cfg/trackers/bytetrack.yaml"
             )
 
-            # Retrieve the depth maps from both cameras
-            zed_depth_np1 = depth1.get_data()
-            zed_depth_np2 = depth2.get_data()
-
-            # Check if the depth maps are empty
-            if zed_depth_np1 is None or zed_depth_np2 is None:
-                print("Error: Depth map is empty")
-                continue
-
-            # Plot the annotated frames with bounding boxes and class labels
-            annotated_frame1 = results1[0].plot(line_width=2, font_size=18)
-            annotated_frame2 = results2[0].plot(line_width=2, font_size=18)
+            # Plot the annotated frames with bounding boxes and class labels and confidence scores
+            annotated_frame1 = yolo11_results1[0].plot(line_width=2, font_size=18)
+            annotated_frame2 = yolo11_results2[0].plot(line_width=2, font_size=18)
 
             # Retrieve the masks and class IDs from the results of the object detection
-            masks1 = results1[0].masks
-            masks2 = results2[0].masks
-            class_ids1 = results1[0].boxes.cls.cpu().numpy()
-            class_ids2 = results2[0].boxes.cls.cpu().numpy()
+            masks1 = yolo11_results1[0].masks
+            masks2 = yolo11_results2[0].masks
+            class_ids1 = yolo11_results1[0].boxes.cls.cpu().numpy()
+            class_ids2 = yolo11_results2[0].boxes.cls.cpu().numpy()
 
             # Processing the masks from camera 1
             if masks1 is not None:
-                # Get depth-maps from both cameras
+                # Get depth-maps from both cameras, convert input Numpy arrays to PyTorch tensors and move them to the GPU
                 depth_map1 = torch.from_numpy(zed_depth_np1).to(device)
                 # Iterate over the masks and class IDs to extract the 3D points for each detected object
                 for i, mask in enumerate(masks1.data):
                     mask = mask.cpu().numpy()
                     mask = erode_mask(mask, iterations=1)
-                    # Move the mask indices to the GPU
+                    # Get the indices of the mask where the mask is 1
                     mask_indices = np.argwhere(mask > 0)
 
                     # Calculate the 3D points using the mask indices and depth map -> This operation is done on the GPU
                     with torch.amp.autocast('cuda'):
-                        points_3d = convert_mask_to_3d_points(mask_indices, depth_map1, cx1, cy1, fx1, fy1)
+                        points_3d_cam1 = convert_mask_to_3d_points(mask_indices, depth_map1, cx1, cy1, fx1, fy1)
 
-                    if points_3d.size(0) > 0:
-                        # Move the 3D points to the CPU and transform them to the robot base frame
-                        point_cloud_cam1 = points_3d.cpu().numpy()
+                    if points_3d_cam1.size(0) > 0:
+                        # Move the 3D points to the CPU and transform them to the robot base frame, NumPy operations are done on the CPU
+                        point_cloud_cam1 = points_3d_cam1.cpu().numpy()
                         point_cloud_cam1_transformed = np.dot(rotation_robot_cam1, point_cloud_cam1.T).T + origin_cam1
-                        # Downsampling the point cloud
+                        # Down sampling the point cloud
                         point_cloud_cam1_transformed = downsample_point_cloud(point_cloud_cam1_transformed, voxel_size=0.01)
-                        # Add the downsampled point cloud and class ID to this cameras point cloud list
+                        # Add the down sampled point cloud and class ID to this cameras point cloud list
                         point_clouds_camera1.append((point_cloud_cam1_transformed, int(class_ids1[i])))
                         print(f"Class ID: {class_ids1[i]} ({class_names[class_ids1[i]]}) in Camera Frame 1")
 
@@ -485,10 +460,10 @@ def main():
                     mask_indices = np.argwhere(mask > 0)
 
                     with torch.amp.autocast('cuda'):
-                        points_3d = convert_mask_to_3d_points(mask_indices, depth_map2, cx2, cy2, fx2, fy2)
+                        points_3d_cam2 = convert_mask_to_3d_points(mask_indices, depth_map2, cx2, cy2, fx2, fy2)
 
-                    if points_3d.size(0) > 0:
-                        point_cloud_cam2 = points_3d.cpu().numpy()
+                    if points_3d_cam2.size(0) > 0:
+                        point_cloud_cam2 = points_3d_cam2.cpu().numpy()
                         point_cloud_cam2_transformed = np.dot(rotation_robot_cam2, point_cloud_cam2.T).T + origin_cam2
 
                         # Down sampling the point cloud
@@ -496,7 +471,7 @@ def main():
                         point_clouds_camera2.append((point_cloud_cam2_transformed, int(class_ids2[i])))
                         print(f"Class ID: {class_ids2[i]} ({class_names[class_ids2[i]]}) in Camera Frame 2")
 
-            # Retrieve the individual point clouds and the fused point cloud
+            # Retrieve the individual point clouds and the fused point cloud of the objects
             pcs1, pcs2, fused_pc = fuse_point_clouds_centroid(point_clouds_camera1, point_clouds_camera2, distance_threshold=0.3)
 
             # Increment the frame count and calculate the FPS
@@ -526,7 +501,7 @@ def main():
             combined_frame = cv2.resize(combined_frame, (combined_frame.shape[1] // 2, combined_frame.shape[0] // 2))
             cv2.imshow("YOLO11 Segmentation+Tracking", combined_frame)
 
-            # Clear the point clouds from both cameras
+            # Clear the point clouds from both cameras -> Prevent overflow
             point_clouds_camera1.clear()
             point_clouds_camera2.clear()
             pcs1.clear()
