@@ -117,7 +117,7 @@ def crop_point_cloud_numpy(point_cloud, x_bounds, y_bounds, z_bounds):
     return point_cloud[mask]
 
 
-def retrieve_process_point_cloud_workspace(zed, point_cloud_mat, resolution, rotation_cam, origin_cam, downsampling_factor=10):
+def retrieve_process_point_cloud_workspace(zed, point_cloud_mat, resolution, rotation_cam, origin_cam, downsampling_factor=5):
     # Grab a frame from the ZED camera, if successful the rest of the code will be executed
     if zed.grab() == sl.ERROR_CODE.SUCCESS:
         # Retrieve the point cloud with color
@@ -235,11 +235,69 @@ def fuse_point_clouds_centroid(point_clouds_camera1, point_clouds_camera2, dista
     return pcs1, pcs2, fused_point_clouds
 
 
+def subtract_point_clouds(workspace_pc, objects_pc, distance_threshold=0.005):
+    # Convert the numpy arrays to Open3D point cloud objects
+    workspace_pcd = o3d.geometry.PointCloud()
+    workspace_pcd.points = o3d.utility.Vector3dVector(workspace_pc)
+
+    objects_pcd = o3d.geometry.PointCloud()
+    objects_pcd.points = o3d.utility.Vector3dVector(objects_pc)
+
+    # Create a KDTree for the objects point cloud
+    kdtree = o3d.geometry.KDTreeFlann(objects_pcd)
+
+    # Find and remove points in the workspace point cloud that are close to points in the objects point cloud
+    indices_to_remove = []
+    for i, point in enumerate(workspace_pcd.points):
+        [_, idx, _] = kdtree.search_radius_vector_3d(point, distance_threshold)
+        if len(idx) > 0:
+            indices_to_remove.append(i)
+
+    # Remove the points
+    workspace_pcd = workspace_pcd.select_by_index(indices_to_remove, invert=True)
+
+    # Convert back to numpy array
+    workspace_pc_subtracted = np.asarray(workspace_pcd.points)
+
+    return workspace_pc_subtracted
+
+
+def voxel_grid_subtract(workspace_pc, objects_pc, voxel_size=0.005):
+    """
+    Subtract the object point cloud from the workspace point cloud using voxel grid filtering.
+
+    Args:
+        workspace_pc (np.ndarray): Workspace point cloud as a NumPy array of shape (N, 3).
+        objects_pc (np.ndarray): Objects point cloud as a NumPy array of shape (M, 3).
+        voxel_size (float): Size of the voxel grid.
+
+    Returns:
+        np.ndarray: Filtered workspace point cloud as a NumPy array.
+    """
+    # Convert NumPy arrays to Open3D PointCloud objects
+    workspace_o3d = o3d.geometry.PointCloud()
+    workspace_o3d.points = o3d.utility.Vector3dVector(workspace_pc)
+
+    objects_o3d = o3d.geometry.PointCloud()
+    objects_o3d.points = o3d.utility.Vector3dVector(objects_pc)
+
+    # Apply voxelization to both point clouds
+    workspace_voxelized = workspace_o3d.voxel_down_sample(voxel_size=voxel_size)
+    objects_voxelized = objects_o3d.voxel_down_sample(voxel_size=voxel_size)
+
+    # Get voxel grids as sets of unique voxel indices
+    workspace_voxels = set(map(tuple, np.asarray(workspace_voxelized.points)))
+    objects_voxels = set(map(tuple, np.asarray(objects_voxelized.points)))
+
+    # Subtract the object voxels from the workspace voxels
+    filtered_voxels = np.array(list(workspace_voxels - objects_voxels))
+
+    return filtered_voxels
 
 
 def main():
     # Check if CUDA is available and set the device
-    global point_cloud_ws_cam1_transformed, point_cloud_ws_cam2_transformed
+    #global point_cloud_ws_cam1_transformed, point_cloud_ws_cam2_transformed
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f"Using device: {device}")
 
@@ -270,7 +328,6 @@ def main():
     init_params2.camera_fps = 30
     init_params2.depth_mode = sl.DEPTH_MODE.NEURAL
     init_params2.depth_minimum_distance = 0.4
-    #init_params2.coordinate_system = sl.COORDINATE_SYSTEM.RIGHT_HANDED_Y_UP # Convention for OpenGl TODO: Check if this is correct?
     init_params2.coordinate_units = sl.UNIT.METER
 
     # Check if the cameras were successfully opened
@@ -375,18 +432,21 @@ def main():
             zed_depth_np1 = depth1.get_data()
             zed_depth_np2 = depth2.get_data()
 
+            # Check if the depth maps were successfully retrieved
+            if depth_retrieval_result1 != sl.ERROR_CODE.SUCCESS or depth_retrieval_result2 != sl.ERROR_CODE.SUCCESS:
+                print(f"Error retrieving depth: {depth_retrieval_result1}, {depth_retrieval_result2}")
+                continue
+
             # Retrieve point clouds of the workspace from both cameras, the retrieved point clouds are already transformed to the robot base frame
             point_cloud_ws_cam1 = retrieve_process_point_cloud_workspace(zed1, point_cloud1_ws, resolution, rotation_robot_cam1, origin_cam1, downsampling_factor=10)
             point_cloud_ws_cam2 = retrieve_process_point_cloud_workspace(zed2, point_cloud2_ws, resolution, rotation_robot_cam2, origin_cam2, downsampling_factor=10)
             # Fuse the point clouds from both cameras
-            point_cloud_ws_fused = np.vstack((point_cloud_ws_cam1, point_cloud_ws_cam2))
+            fused_point_cloud_ws = np.vstack((point_cloud_ws_cam1, point_cloud_ws_cam2))
 
-            print(f"Point Cloud Camera 1 shape: {point_cloud_ws_cam1.shape}")
-            print(f"Point Cloud Camera 2 shape: {point_cloud_ws_cam2.shape}")
-            print(f"Fused Point Cloud shape: {point_cloud_ws_fused.shape}")
+            print(f"Fused Point Cloud Workspace shape: {fused_point_cloud_ws.shape}")
 
-            # Display the point cloud
-            #visualize_point_cloud(point_cloud_ws_cam1, title=f"Point Cloud Camera 1 - SN:{sn_cam1}")
+            # # Display the point cloud
+            # visualize_point_cloud(point_cloud_ws_cam1, title=f"Point Cloud Camera 1 - SN:{sn_cam1}")
             # visualize_point_cloud(point_cloud_ws_cam2, title=f"Point Cloud Camera 2 - SN:{sn_cam2}")
 
             # Perform object detection/segmentation and tracking on both frames using YOLO11
@@ -472,7 +532,20 @@ def main():
                         print(f"Class ID: {class_ids2[i]} ({class_names[class_ids2[i]]}) in Camera Frame 2")
 
             # Retrieve the individual point clouds and the fused point cloud of the objects
-            pcs1, pcs2, fused_pc = fuse_point_clouds_centroid(point_clouds_camera1, point_clouds_camera2, distance_threshold=0.3)
+            pcs1, pcs2, fused_pc_objects = fuse_point_clouds_centroid(point_clouds_camera1, point_clouds_camera2, distance_threshold=0.3)
+
+            # Subtract the fused point cloud of the objects from the workspace point cloud
+            fused_pc_objects_points = [pc for pc, _ in fused_pc_objects]
+            # Combine the point clouds into a single numpy array
+            fused_pc_objects_concatenated = np.vstack(fused_pc_objects_points)
+            print(f"Fused Point Cloud Objects Concatenated shape: {fused_pc_objects_concatenated.shape}")
+            # Substract the fused point cloud of the objects from the workspace point cloud
+            workspace_pc_subtracted = subtract_point_clouds(fused_point_cloud_ws, fused_pc_objects_concatenated, distance_threshold=0.01)
+            print(f"Workspace Point Cloud Subtracted shape - KDTree: {workspace_pc_subtracted.shape}")
+
+            # Subtract the fused point cloud of the objects from the workspace point cloud using voxel grid filtering
+            workspace_pc_subtracted_voxel = voxel_grid_subtract(fused_point_cloud_ws, fused_pc_objects_concatenated, voxel_size=0.01)
+            print(f"Workspace Point Cloud Subtracted shape - VoxelApproach: {workspace_pc_subtracted_voxel.shape}")
 
             # Increment the frame count and calculate the FPS
             frame_count += 1
@@ -506,8 +579,8 @@ def main():
             point_clouds_camera2.clear()
             pcs1.clear()
             pcs2.clear()
-            fused_pc.clear()
-
+            fused_pc_objects.clear()
+            # Wait for the 'q' key press to exit the loop
             key = cv2.waitKey(1)
 
     zed1.close()
