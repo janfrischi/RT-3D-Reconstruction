@@ -3,7 +3,7 @@ from object_detection_and_point_cloud_processing import MainApp
 
 if __name__ == "__main__":
     # Initialize the YOLO model and the camera system
-    model_path = "models/yolo11l-seg.pt"
+    model_path = "models/yolo11m-seg.pt"
     sn_cam1 = 33137761
     sn_cam2 = 36829049
 

@@ -3,6 +3,7 @@ import pyzed.sl as sl
 import cv2
 import time
 import torch
+import torch.nn.functional as F
 import open3d as o3d
 import open3d.core as o3c
 
@@ -36,15 +37,18 @@ def erode_mask(mask, iterations=1):
     eroded_mask = cv2.erode(mask, kernel, iterations=iterations)
     return eroded_mask
 
+def erode_mask_gpu(mask, kernel_size=3):
+    kernel = torch.ones((1, 1, kernel_size, kernel_size), device=mask.device)
+    eroded_mask = F.conv2d(mask.unsqueeze(0).unsqueeze(0).float(), kernel, padding=kernel_size // 2)
+    return (eroded_mask.squeeze() > 0).float()
+
 # Convert 2D mask pixel coordinates to 3D points using depth values on GPU
 def convert_mask_to_3d_points(mask_indices, depth_map, cx, cy, fx, fy, device='cuda'):
-    # Convert the mask indices (y,x coords where the mask is 1) to a tensor and move to GPU
-    mask_indices = torch.tensor(mask_indices, device=device)
     # Extract the u, v coordinates from the mask indices
     u_coords = mask_indices[:, 1]
     v_coords = mask_indices[:, 0]
-    # Extract the necessary depth values from the depth map and move to GPU
-    depth_values = depth_map[v_coords, u_coords].to(device)
+    # Extract the necessary depth values from the depth map
+    depth_values = depth_map[v_coords, u_coords]
     # Create a mask to filter out invalid depth values
     valid_mask = (depth_values > 0) & ~torch.isnan(depth_values) & ~torch.isinf(depth_values)
     # Filter out invalid depth values
@@ -59,26 +63,22 @@ def convert_mask_to_3d_points(mask_indices, depth_map, cx, cy, fx, fy, device='c
     return torch.stack((x_coords, y_coords, z_coords), dim=-1)
 
 
-# Downsample a point cloud using voxel downsampling
-# def downsample_point_cloud(point_cloud, voxel_size=0.005):
-#     # Convert the numpy array to an Open3D point cloud
-#     pcd = o3d.geometry.PointCloud()
-#     pcd.points = o3d.utility.Vector3dVector(point_cloud)
-#     # Perform voxel downsampling
-#     downsampled_pcd = pcd.voxel_down_sample(voxel_size=voxel_size)
-#     # Convert back to numpy array
-#     downsampled_points = np.asarray(downsampled_pcd.points)
-#     return downsampled_points
-
+# TODO. Check how implementation on CPU vs GPU affects performance
 # Using this implementation we gain an additional 5fps
-def downsample_point_cloud(point_cloud, voxel_size=0.005):
+def downsample_point_cloud_cpu(point_cloud, voxel_size=0.005):
     # Convert the numpy array to an Open3D point cloud
     pcd = o3d.t.geometry.PointCloud(o3c.Tensor(point_cloud, device=o3c.Device("CUDA:0")))
     downsampled_pcd = pcd.voxel_down_sample(voxel_size=0.005)
     downsampled_points = downsampled_pcd.point.positions.cpu().numpy()
     return downsampled_points
 
+# Perform downsampling directly on the GPU
+def downsample_point_cloud_gpu(point_cloud, voxel_size):
+    rounded = torch.round(point_cloud / voxel_size) * voxel_size
+    downsampled_points = torch.unique(rounded, dim=0)
+    return downsampled_points
 
+# Filter out the outliers in the point cloud using the Statistical Outlier Removal filter
 def filter_outliers_sor(point_cloud, nb_neighbors=20, std_ratio=5):
     # Convert the numpy array to an Open3D point cloud
     pcd = o3d.geometry.PointCloud()
@@ -106,6 +106,9 @@ def visualize_point_cloud(point_cloud, title="Point Cloud"):
 def calculate_centroid(point_cloud):
     return np.mean(point_cloud, axis=0)
 
+def calculate_centroid_gpu(point_cloud):
+    return torch.mean(point_cloud, dim=0)
+
 # Crop a point cloud using NumPy, ideally the point_cloud should be transformed to the robot base frame
 def crop_point_cloud_numpy(point_cloud, x_bounds, y_bounds, z_bounds):
     mask = (
@@ -116,70 +119,13 @@ def crop_point_cloud_numpy(point_cloud, x_bounds, y_bounds, z_bounds):
     # Apply the mask to the point cloud and return the cropped point cloud
     return point_cloud[mask]
 
-
-def retrieve_process_point_cloud_workspace(zed, point_cloud_mat, resolution, rotation_cam, origin_cam,
-                                           downsampling_factor=5):
-    timings = {}
-
-    # Step 0: Grab a frame
-    start_time = time.time()
-    if zed.grab() != sl.ERROR_CODE.SUCCESS:
-        return None
-    timings['grab_frame'] = time.time() - start_time
-
-    # Step 1: Retrieve the point cloud
-    start_time = time.time()
-    zed.retrieve_measure(point_cloud_mat, measure=sl.MEASURE.XYZRGBA, type=sl.MEM.CPU, resolution=resolution)
-    timings['retrieve_measure'] = time.time() - start_time
-
-    # Step 2: Convert to NumPy array
-    start_time = time.time()
-    point_cloud_workspace_np = point_cloud_mat.get_data()[:, :, :3]
-    point_cloud_workspace_np = point_cloud_workspace_np.reshape(-1, 3)
-    timings['convert_to_numpy'] = time.time() - start_time
-
-    # # Step 3: Filter invalid points
-    # start_time = time.time()
-    # valid_mask_workspace = ~np.isnan(point_cloud_workspace_np).any(axis=1) & ~np.isinf(point_cloud_workspace_np).any(
-    #     axis=1)
-    # point_cloud_workspace_np = point_cloud_workspace_np[valid_mask_workspace]
-    # timings['filter_invalid_points'] = time.time() - start_time
-
-    # Step 4: Transform the point cloud
-    start_time = time.time()
-    point_cloud_workspace_np_transformed = np.dot(rotation_cam, point_cloud_workspace_np.T).T + origin_cam
-    timings['transform_point_cloud'] = time.time() - start_time
-
-    # Step 5: Crop the point cloud
-    start_time = time.time()
-    x_bounds_baseframe = (-2.5, 2.5)
-    y_bounds_baseframe = (-1.5, 1.5)
-    z_bounds_baseframe = (0, 2.5)
-
-    point_cloud_workspace_np_cropped = crop_point_cloud_numpy(
-        point_cloud_workspace_np_transformed,
-        x_bounds_baseframe,
-        y_bounds_baseframe,
-        z_bounds_baseframe
+def crop_point_cloud_gpu(point_cloud, x_bounds, y_bounds, z_bounds):
+    mask = (
+        (point_cloud[:, 0] >= x_bounds[0]) & (point_cloud[:, 0] <= x_bounds[1]) &
+        (point_cloud[:, 1] >= y_bounds[0]) & (point_cloud[:, 1] <= y_bounds[1]) &
+        (point_cloud[:, 2] >= z_bounds[0]) & (point_cloud[:, 2] <= z_bounds[1])
     )
-    timings['crop_point_cloud'] = time.time() - start_time
-
-    # Step 6: Downsample the point cloud
-    start_time = time.time()
-    point_cloud_workspace_downsampled = point_cloud_workspace_np_cropped[::downsampling_factor]
-    timings['downsample_point_cloud'] = time.time() - start_time
-
-    # Log timings for analysis
-    print("Timing breakdown (in seconds):")
-    for step, duration in timings.items():
-        print(f"{step}: {duration:.6f} s")
-
-    # Print the total time taken to process the point cloud
-    total_time = sum(timings.values())
-    print(f"Total time taken: {total_time:.6f} s")
-
-    return point_cloud_workspace_downsampled
-
+    return point_cloud[mask]
 
 # Function to fuse the point clouds based on centroid distance
 def fuse_point_clouds_centroid(point_clouds_camera1, point_clouds_camera2, distance_threshold=0.1):
@@ -291,7 +237,7 @@ def subtract_point_clouds(workspace_pc, objects_pc, distance_threshold=0.005):
     return workspace_pc_subtracted
 
 
-def voxel_grid_subtract(workspace_pc, objects_pc, voxel_size=0.005):
+def voxel_grid_subtract(workspace_pc, objects_pc, voxel_size=0.02):
     """
     Subtract the object point cloud from the workspace point cloud using voxel grid filtering.
 
@@ -331,7 +277,7 @@ def main():
     print(f"Using device: {device}")
 
     # Load the pre-trained YOLOv11 model and move it to the device
-    model = YOLO("yolo11m-seg.pt").to(device)
+    model = YOLO("yolo11l-seg.pt").to(device)
 
     # Initialize the ZED camera objects
     zed1 = sl.Camera()
@@ -417,6 +363,8 @@ def main():
     # Set the resolution for the point clouds
     #resolution = sl.Resolution(1280, 720)
     resolution = sl.Resolution(640, 360)
+    # Try even smaller resolution
+    #resolution = sl.Resolution(320, 180)
 
     # Initialize the image and depth map variables for both cameras
     image1 = sl.Mat()
@@ -452,32 +400,88 @@ def main():
             frame1 = image1.get_data()
             frame2 = image2.get_data()
             # Convert the frames from RGBA to RGB as this is the format expected by OPENCV
+            # frame1 and frame2 are the inputs to the YOLO model
             frame1 = cv2.cvtColor(frame1, cv2.COLOR_BGRA2BGR)
             frame2 = cv2.cvtColor(frame2, cv2.COLOR_BGRA2BGR)
 
             # Retrieve the depth maps from both cameras and convert them to numpy arrays
             depth_retrieval_result1 = zed1.retrieve_measure(depth1, measure=sl.MEASURE.DEPTH)
             depth_retrieval_result2 = zed2.retrieve_measure(depth2, measure=sl.MEASURE.DEPTH)
+            # Convert the depth maps to numpy arrays
             zed_depth_np1 = depth1.get_data()
             zed_depth_np2 = depth2.get_data()
-
             # Check if the depth maps were successfully retrieved
             if depth_retrieval_result1 != sl.ERROR_CODE.SUCCESS or depth_retrieval_result2 != sl.ERROR_CODE.SUCCESS:
                 print(f"Error retrieving depth: {depth_retrieval_result1}, {depth_retrieval_result2}")
                 continue
 
-            # Retrieve point clouds of the workspace from both cameras, the retrieved point clouds are already transformed to the robot base frame
-            point_cloud_ws_cam1 = retrieve_process_point_cloud_workspace(zed1, point_cloud1_ws, resolution, rotation_robot_cam1, origin_cam1, downsampling_factor=10)
-            point_cloud_ws_cam2 = retrieve_process_point_cloud_workspace(zed2, point_cloud2_ws, resolution, rotation_robot_cam2, origin_cam2, downsampling_factor=10)
-            # Fuse the point clouds from both cameras
-            fused_point_cloud_ws = np.vstack((point_cloud_ws_cam1, point_cloud_ws_cam2))
+            # 1. Retrieve the point clouds for the workspace from both cameras
+            zed1.retrieve_measure(point_cloud1_ws, measure=sl.MEASURE.XYZ, resolution=resolution)
+            zed2.retrieve_measure(point_cloud2_ws, measure=sl.MEASURE.XYZ, resolution=resolution)
+            # 2. Convert the point clouds to numpy arrays
+            point_cloud1_ws_np = point_cloud1_ws.get_data()[:, :, :3]
+            point_cloud1_ws_np = point_cloud1_ws_np.reshape(-1, 3)
+            point_cloud2_ws_np = point_cloud2_ws.get_data()[:, :, :3]
+            point_cloud2_ws_np = point_cloud2_ws_np.reshape(-1, 3)
+            # 3. Filter invalid points from the point clouds
+            valid_mask_workspace1 = np.isfinite(point_cloud1_ws_np).all(axis=1)
+            point_cloud1_ws_np = point_cloud1_ws_np[valid_mask_workspace1]
+            valid_mask_workspace2 = np.isfinite(point_cloud2_ws_np).all(axis=1)
+            point_cloud2_ws_np = point_cloud2_ws_np[valid_mask_workspace2]
+
+            # Transform the point clouds to the robot base frame using torch tensors
+            start_time1 = time.time()
+            point_cloud1_ws_tensor = torch.tensor(point_cloud1_ws_np, dtype=torch.float32, device=device)
+            rotation1_torch = torch.tensor(rotation_robot_cam1, dtype=torch.float32, device=device)
+            origin1_torch = torch.tensor(origin_cam1,dtype=torch.float32, device=device)
+            point_cloud1_ws_transformed_tensor = torch.mm(rotation1_torch, point_cloud1_ws_tensor.T).T + origin1_torch
+            end_time1 = time.time()
+            print(f"Time taken to transform point cloud 1: {end_time1 - start_time1:.6f} s")
+
+            start_time2 = time.time()
+            point_cloud2_ws_tensor = torch.tensor(point_cloud2_ws_np, dtype=torch.float32, device=device)
+            rotation2_torch = torch.tensor(rotation_robot_cam2, dtype=torch.float32, device=device)
+            origin2_torch = torch.tensor(origin_cam2, dtype=torch.float32, device=device)
+            point_cloud2_ws_transformed_tensor = torch.mm(rotation2_torch, point_cloud2_ws_tensor.T).T + origin2_torch
+            end_time2 = time.time()
+            print(f"Time taken to transform point cloud 2: {end_time2 - start_time2:.6f} s")
+
+            # Crop the point clouds to the workspace
+            x_bounds_baseframe = (-2.5, 2.5)
+            y_bounds_baseframe = (-1.5, 1.5)
+            z_bounds_baseframe = (0, 2.5)
+
+            point_cloud1_workspace_np_cropped = crop_point_cloud_gpu(
+                point_cloud1_ws_transformed_tensor,
+                x_bounds_baseframe,
+                y_bounds_baseframe,
+                z_bounds_baseframe
+            )
+
+            point_cloud2_workspace_np_cropped = crop_point_cloud_gpu(
+                point_cloud2_ws_transformed_tensor,
+                x_bounds_baseframe,
+                y_bounds_baseframe,
+                z_bounds_baseframe
+            )
+
+            # Downsample the point clouds
+            point_cloud1_workspace = downsample_point_cloud_gpu(point_cloud1_workspace_np_cropped, voxel_size=0.01)
+            point_cloud2_workspace = downsample_point_cloud_gpu(point_cloud2_workspace_np_cropped, voxel_size=0.01)
+            fused_point_cloud_ws = torch.cat((point_cloud1_workspace, point_cloud2_workspace), dim=0)
+            # Convert to numpy array
+            fused_point_cloud_ws = fused_point_cloud_ws.cpu().numpy()
+            # Visualize the point clouds
+            visualize_point_cloud(fused_point_cloud_ws, title="Fused Point Cloud Workspace")
+            print(f"Point Cloud 1 Workspace shape: {point_cloud1_workspace.shape}")
+            print(f"Point Cloud 2 Workspace shape: {point_cloud2_workspace.shape}")
             print(f"Fused Point Cloud Workspace shape: {fused_point_cloud_ws.shape}")
 
             # Perform object detection/segmentation and tracking on both frames using YOLO11
             yolo11_results1 = model.track(
                 source=frame1,
                 imgsz=640,
-                vid_stride = 15,
+                #vid_stride = 15,
                 classes=[39, 41],
                 persist=True,
                 retina_masks=True,
@@ -489,7 +493,7 @@ def main():
             yolo11_results2 = model.track(
                 source=frame2,
                 imgsz=640,
-                vid_stride=15,
+                #vid_stride=15,
                 classes=[39, 41],
                 persist=True,
                 retina_masks=True,
@@ -502,7 +506,7 @@ def main():
             annotated_frame1 = yolo11_results1[0].plot(line_width=2, font_size=18)
             annotated_frame2 = yolo11_results2[0].plot(line_width=2, font_size=18)
 
-            # Retrieve the masks and class IDs from the results of the object detection
+            # YOLO Outputs Retrieve the masks and class IDs from the results of the object detection
             masks1 = yolo11_results1[0].masks
             masks2 = yolo11_results2[0].masks
             class_ids1 = yolo11_results1[0].boxes.cls.cpu().numpy()
@@ -511,66 +515,100 @@ def main():
             # Processing the masks from camera 1
             if masks1 is not None:
                 # Get depth-maps from both cameras, convert input Numpy arrays to PyTorch tensors and move them to the GPU
-                depth_map1 = torch.from_numpy(zed_depth_np1).to(device)
+                depth_map1 = torch.tensor(zed_depth_np1, dtype=torch.float32, device=device)
                 # Iterate over the masks and class IDs to extract the 3D points for each detected object
                 for i, mask in enumerate(masks1.data):
-                    mask = mask.cpu().numpy()
-                    mask = erode_mask(mask, iterations=1)
-                    # Get the indices of the mask where the mask is 1
-                    mask_indices = np.argwhere(mask > 0)
+                    mask = erode_mask_gpu(mask, kernel_size=3)
+                    mask_indices = torch.nonzero(mask, as_tuple=False)
+                    # mask = mask.cpu().numpy()
+                    # mask = erode_mask(mask, iterations=1)
+                    # # Get the indices of the mask where the mask is 1
+                    # mask_indices = np.argwhere(mask > 0)
 
-                    # Calculate the 3D points using the mask indices and depth map -> This operation is done on the GPU
+                    # Calculate the 3D points using the mask indices and depth map -> This operation is done on the GPU,
+                    # Points are stored as a tensor on the GPU, data type is torch.float32
                     with torch.amp.autocast('cuda'):
                         points_3d_cam1 = convert_mask_to_3d_points(mask_indices, depth_map1, cx1, cy1, fx1, fy1)
 
                     if points_3d_cam1.size(0) > 0:
-                        # Move the 3D points to the CPU and transform them to the robot base frame, NumPy operations are done on the CPU
-                        point_cloud_cam1 = points_3d_cam1.cpu().numpy()
-                        point_cloud_cam1_transformed = np.dot(rotation_robot_cam1, point_cloud_cam1.T).T + origin_cam1
-                        # Down sampling the point cloud
-                        point_cloud_cam1_transformed = downsample_point_cloud(point_cloud_cam1_transformed, voxel_size=0.01)
-                        # Add the down sampled point cloud and class ID to this cameras point cloud list
-                        point_clouds_camera1.append((point_cloud_cam1_transformed, int(class_ids1[i])))
+                        # Transform points using torch.mm for GPU acceleration
+                        rotation_robot_cam1_torch = torch.tensor(rotation_robot_cam1, dtype=torch.float32,
+                                                                 device=points_3d_cam1.device)
+                        origin_cam1_torch = torch.tensor(origin_cam1, dtype=torch.float32, device=points_3d_cam1.device)
+
+                        # Perform transformation on the GPU
+                        point_cloud_cam1_transformed = torch.mm(points_3d_cam1,
+                                                                rotation_robot_cam1_torch.T) + origin_cam1_torch
+
+                        point_cloud_cam1_downsampled = downsample_point_cloud_gpu(point_cloud_cam1_transformed,voxel_size=0.01)
+
+                        # Move transformed points to CPU for further processing
+                        point_cloud_cam1_downsampled_cpu = point_cloud_cam1_downsampled.cpu().numpy()
+
+                        # Add the downsampled point cloud and class ID to this camera's point cloud list
+                        point_clouds_camera1.append((point_cloud_cam1_downsampled_cpu, int(class_ids1[i])))
                         print(f"Class ID: {class_ids1[i]} ({class_names[class_ids1[i]]}) in Camera Frame 1")
+
+
 
             # Processing the masks from camera 2
             if masks2 is not None:
                 # Get depth-maps from both cameras
-                depth_map2 = torch.from_numpy(zed_depth_np2).to(device)
+                depth_map2 = torch.tensor(zed_depth_np2, dtype=torch.float32, device=device)
                 # Iterate over the masks and class IDs to extract the 3D points for each detected object
                 for i, mask in enumerate(masks2.data):
-                    mask = mask.cpu().numpy()
-                    mask = erode_mask(mask, iterations=1)
-                    mask_indices = np.argwhere(mask > 0)
+                    # mask = mask.cpu().numpy()
+                    # mask = erode_mask(mask, iterations=1)
+                    # mask_indices = np.argwhere(mask > 0)
+                    mask = erode_mask_gpu(mask, kernel_size=3)
+                    mask_indices = torch.nonzero(mask, as_tuple=False)
+                    print(f"Mask Indices type: {type(mask_indices)}")
+                    print(f"Mask Indices shape: {mask_indices.shape}")
+                    print(f"Mask indices device: {mask_indices.device}")
 
                     with torch.amp.autocast('cuda'):
                         points_3d_cam2 = convert_mask_to_3d_points(mask_indices, depth_map2, cx2, cy2, fx2, fy2)
 
                     if points_3d_cam2.size(0) > 0:
-                        point_cloud_cam2 = points_3d_cam2.cpu().numpy()
-                        point_cloud_cam2_transformed = np.dot(rotation_robot_cam2, point_cloud_cam2.T).T + origin_cam2
+                        # Transform points using torch.mm for GPU acceleration
+                        rotation_robot_cam2_torch = torch.tensor(rotation_robot_cam2, dtype=torch.float32,
+                                                                 device=points_3d_cam2.device)
+                        origin_cam2_torch = torch.tensor(origin_cam2, dtype=torch.float32, device=points_3d_cam2.device)
 
-                        # Down sampling the point cloud
-                        point_cloud_cam2_transformed = downsample_point_cloud(point_cloud_cam2_transformed, voxel_size=0.01)
-                        point_clouds_camera2.append((point_cloud_cam2_transformed, int(class_ids2[i])))
+                        # Perform transformation on the GPU
+                        point_cloud_cam2_transformed = torch.mm(points_3d_cam2,
+                                                                rotation_robot_cam2_torch.T) + origin_cam2_torch
+
+                        point_cloud_cam2_downsampled = downsample_point_cloud_gpu(point_cloud_cam2_transformed,
+                                                                                  voxel_size=0.01)
+                        # Move transformed points to CPU for further processing
+                        point_cloud_cam2_downsampled_cpu = point_cloud_cam2_downsampled.cpu().numpy()
+
+                        # Add the downsampled point cloud and class ID to this camera's point cloud list
+                        point_clouds_camera2.append((point_cloud_cam2_downsampled_cpu, int(class_ids2[i])))
                         print(f"Class ID: {class_ids2[i]} ({class_names[class_ids2[i]]}) in Camera Frame 2")
 
             # Retrieve the individual point clouds and the fused point cloud of the objects
             pcs1, pcs2, fused_pc_objects = fuse_point_clouds_centroid(point_clouds_camera1, point_clouds_camera2, distance_threshold=0.3)
 
             # # Subtract the fused point cloud of the objects from the workspace point cloud
-            # fused_pc_objects_points = [pc for pc, _ in fused_pc_objects]
-            # # Combine the point clouds into a single numpy array
-            # fused_pc_objects_concatenated = np.vstack(fused_pc_objects_points)
-            # print(f"Fused Point Cloud Objects Concatenated shape: {fused_pc_objects_concatenated.shape}")
+            fused_pc_objects_points = [pc for pc, _ in fused_pc_objects]
 
-            # Subtract the fused point cloud of the objects from the workspace point cloud
+            # Combine the point clouds into a single numpy array
+            if fused_pc_objects_points:
+                fused_pc_objects_concatenated = np.vstack(fused_pc_objects_points)
+            else:
+                fused_pc_objects_concatenated = np.empty((0, 3))  # or handle the empty case appropriately
+
+            print(f"Fused Point Cloud Objects Concatenated shape: {fused_pc_objects_concatenated.shape}")
+
+            # # Subtract the fused point cloud of the objects from the workspace point cloud
             # workspace_pc_subtracted = subtract_point_clouds(fused_point_cloud_ws, fused_pc_objects_concatenated, distance_threshold=0.01)
             # print(f"Workspace Point Cloud Subtracted shape - KDTree: {workspace_pc_subtracted.shape}")
 
-            # # Subtract the fused point cloud of the objects from the workspace point cloud using voxel grid filtering
-            # workspace_pc_subtracted_voxel = voxel_grid_subtract(fused_point_cloud_ws, fused_pc_objects_concatenated, voxel_size=0.01)
-            # print(f"Workspace Point Cloud Subtracted shape - VoxelApproach: {workspace_pc_subtracted_voxel.shape}")
+            # Subtract the fused point cloud of the objects from the workspace point cloud using voxel grid filtering
+            workspace_pc_subtracted_voxel = voxel_grid_subtract(fused_point_cloud_ws, fused_pc_objects_concatenated, voxel_size=0.01)
+            print(f"Workspace Point Cloud Subtracted shape - VoxelApproach: {workspace_pc_subtracted_voxel.shape}")
 
             # Increment the frame count and calculate the FPS
             frame_count += 1
