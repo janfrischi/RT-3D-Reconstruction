@@ -4,6 +4,12 @@ import time
 import torch
 from ultralytics import YOLO
 
+"""Use Case Fit
+    Best For:
+        Applications where simplicity, speed, and real-time object tracking are key (e.g., video surveillance, simple object monitoring systems).
+    Not Ideal For:
+        Robotics applications requiring 3D spatial reasoning, precise localization, or complex environmental interaction."""
+
 # This script demonstrates how to perform object tracking with YOLO11 segmentation model on ZED camera feed
 # No point cloud processing is done in this script
 
