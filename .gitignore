@@ -1,3 +1,5 @@
 *.pt
 pyzed-4.1-cp310-cp310-linux_x86_64.whl
 get_python_api.py
+depth_sensing
+CSV-Files
