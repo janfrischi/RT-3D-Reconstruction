@@ -79,7 +79,7 @@ def downsample_point_cloud(point_cloud, voxel_size=0.005):
     return downsampled_points
 
 
-def filter_outliers_sor(point_cloud, nb_neighbors=20, std_ratio=5):
+def filter_outliers_sor(point_cloud, nb_neighbors=20, std_ratio=1.5):
     # Convert the numpy array to an Open3D point cloud
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(point_cloud)
@@ -118,7 +118,7 @@ def crop_point_cloud_numpy(point_cloud, x_bounds, y_bounds, z_bounds):
 
 
 def retrieve_process_point_cloud_workspace(zed, point_cloud_mat, resolution, rotation_cam, origin_cam,
-                                           downsampling_factor=5):
+                                           downsampling_factor=1):
     timings = {}
 
     # Step 0: Grab a frame
@@ -152,9 +152,9 @@ def retrieve_process_point_cloud_workspace(zed, point_cloud_mat, resolution, rot
 
     # Step 5: Crop the point cloud
     start_time = time.time()
-    x_bounds_baseframe = (-2.5, 2.5)
-    y_bounds_baseframe = (-1.5, 1.5)
-    z_bounds_baseframe = (0, 2.5)
+    x_bounds_baseframe = (-0.25, 0.75)
+    y_bounds_baseframe = (-0.5, 1.75)
+    z_bounds_baseframe = (-0.1, 3)
 
     point_cloud_workspace_np_cropped = crop_point_cloud_numpy(
         point_cloud_workspace_np_transformed,
@@ -381,14 +381,14 @@ def main():
 
     # Define the transformation matrices from the chessboard to the camera frames
 
-    T_chess_cam1 = np.array([[0.6653, 0.4827, -0.5696, 0.5868],
-                             [-0.7466, 0.4314, -0.5065, 0.7718],
-                             [0.0012, 0.7622, 0.6473, -0.7245],
+    T_chess_cam1 = np.array([[0.8811, 0.2610, -0.3943, 0.5574],
+                             [-0.4729, 0.4893, -0.7328, 1.1355],
+                             [0.0017, 0.8321, 0.5546, -0.7219],
                              [0.0000, 0.0000, 0.0000, 1.0000]])
 
-    T_chess_cam2 = np.array([[0.3981, -0.6302, 0.6666, -0.5739],
-                             [0.9173, 0.2688, -0.2937, 0.3581],
-                             [0.0059, 0.7284, 0.6851, -0.6835],
+    T_chess_cam2 = np.array([[0.4590, -0.4169, 0.7846, -0.8619],
+                             [0.8883, 0.1979, -0.4145, 0.8274],
+                             [0.0176, 0.8872, 0.4611, -0.7204],
                              [0.0000, 0.0000, 0.0000, 1.0000]])
 
     # This transformation matrix is given by the geometry of the mount and the chessboard
@@ -414,9 +414,9 @@ def main():
     print(f"Distance from robot frame to camera frame 1: {distance_cam1:.4f} meters")
     print(f"Distance from robot frame to camera frame 2: {distance_cam2:.4f} meters")
 
-    # Set the resolution for the point clouds
-    #resolution = sl.Resolution(1280, 720)
-    resolution = sl.Resolution(640, 360)
+    # Set the point_cloud_resolution for the point clouds
+    #point_cloud_resolution = sl.Resolution(1280, 720)
+    point_cloud_resolution = sl.Resolution(640, 360)
 
     # Initialize the image and depth map variables for both cameras
     image1 = sl.Mat()
@@ -425,8 +425,8 @@ def main():
     depth2 = sl.Mat()
 
     # Create point cloud objects to hold data of the workspace
-    point_cloud1_ws = sl.Mat(resolution.width, resolution.height, sl.MAT_TYPE.F32_C4, sl.MEM.CPU)
-    point_cloud2_ws = sl.Mat(resolution.width, resolution.height, sl.MAT_TYPE.F32_C4, sl.MEM.CPU)
+    point_cloud1_ws = sl.Mat(point_cloud_resolution.width, point_cloud_resolution.height, sl.MAT_TYPE.F32_C4, sl.MEM.CPU)
+    point_cloud2_ws = sl.Mat(point_cloud_resolution.width, point_cloud_resolution.height, sl.MAT_TYPE.F32_C4, sl.MEM.CPU)
 
     # Initialize the key variable to check for the 'q' key press
     key = ''
@@ -467,11 +467,17 @@ def main():
                 continue
 
             # Retrieve point clouds of the workspace from both cameras, the retrieved point clouds are already transformed to the robot base frame
-            point_cloud_ws_cam1 = retrieve_process_point_cloud_workspace(zed1, point_cloud1_ws, resolution, rotation_robot_cam1, origin_cam1, downsampling_factor=10)
-            point_cloud_ws_cam2 = retrieve_process_point_cloud_workspace(zed2, point_cloud2_ws, resolution, rotation_robot_cam2, origin_cam2, downsampling_factor=10)
+            point_cloud_ws_cam1 = retrieve_process_point_cloud_workspace(zed1, point_cloud1_ws, point_cloud_resolution, rotation_robot_cam1, origin_cam1, downsampling_factor=10)
+            point_cloud_ws_cam2 = retrieve_process_point_cloud_workspace(zed2, point_cloud2_ws, point_cloud_resolution, rotation_robot_cam2, origin_cam2, downsampling_factor=10)
             # Fuse the point clouds from both cameras
             fused_point_cloud_ws = np.vstack((point_cloud_ws_cam1, point_cloud_ws_cam2))
+            # Visualize the point cloud before removing the outliers
+            visualize_point_cloud(fused_point_cloud_ws, title="Fused Point Cloud Workspace before filtering")
+            # TODO: Check what removing the outliers actually does
+            # Remove the outliers from the fused point cloud
+            fused_point_cloud_ws = filter_outliers_sor(fused_point_cloud_ws)
             print(f"Fused Point Cloud Workspace shape: {fused_point_cloud_ws.shape}")
+            visualize_point_cloud(fused_point_cloud_ws, title="Fused Point Cloud Workspace after Statistical Outlier Removal")
 
             # Perform object detection/segmentation and tracking on both frames using YOLO11
             yolo11_results1 = model.track(
@@ -558,19 +564,24 @@ def main():
             # Retrieve the individual point clouds and the fused point cloud of the objects
             pcs1, pcs2, fused_pc_objects = fuse_point_clouds_centroid(point_clouds_camera1, point_clouds_camera2, distance_threshold=0.3)
 
-            # # Subtract the fused point cloud of the objects from the workspace point cloud
-            # fused_pc_objects_points = [pc for pc, _ in fused_pc_objects]
-            # # Combine the point clouds into a single numpy array
-            # fused_pc_objects_concatenated = np.vstack(fused_pc_objects_points)
-            # print(f"Fused Point Cloud Objects Concatenated shape: {fused_pc_objects_concatenated.shape}")
+            # Subtract the fused point cloud of the objects from the workspace point cloud
+            fused_pc_objects_points = [pc for pc, _ in fused_pc_objects]
+            # Combine the point clouds into a single numpy array
+            fused_pc_objects_concatenated = np.vstack(fused_pc_objects_points)
+            visualize_point_cloud(fused_pc_objects_concatenated, title="Fused Point Cloud Objects before filtering")
+            # Remove the outliers from the fused point cloud
+            fused_pc_objects_concatenated = filter_outliers_sor(fused_pc_objects_concatenated)
+            print(f"Fused Point Cloud Objects Concatenated shape: {fused_pc_objects_concatenated.shape}")
+            visualize_point_cloud(fused_pc_objects_concatenated, title="Fused Point Cloud Objects after Statistical Outlier Removal")
 
             # Subtract the fused point cloud of the objects from the workspace point cloud
             # workspace_pc_subtracted = subtract_point_clouds(fused_point_cloud_ws, fused_pc_objects_concatenated, distance_threshold=0.01)
             # print(f"Workspace Point Cloud Subtracted shape - KDTree: {workspace_pc_subtracted.shape}")
 
-            # # Subtract the fused point cloud of the objects from the workspace point cloud using voxel grid filtering
-            # workspace_pc_subtracted_voxel = voxel_grid_subtract(fused_point_cloud_ws, fused_pc_objects_concatenated, voxel_size=0.01)
-            # print(f"Workspace Point Cloud Subtracted shape - VoxelApproach: {workspace_pc_subtracted_voxel.shape}")
+            # Subtract the fused point cloud of the objects from the workspace point cloud using voxel grid filtering
+            workspace_pc_subtracted_voxel = voxel_grid_subtract(fused_point_cloud_ws, fused_pc_objects_concatenated, voxel_size=0.01)
+            print(f"Workspace Point Cloud Subtracted shape - VoxelApproach: {workspace_pc_subtracted_voxel.shape}")
+            #visualize_point_cloud(workspace_pc_subtracted_voxel, title="Workspace Point Cloud Subtracted")
 
             # Increment the frame count and calculate the FPS
             frame_count += 1

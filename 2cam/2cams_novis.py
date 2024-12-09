@@ -149,6 +149,7 @@ def fuse_point_clouds_centroid(point_clouds_camera1, point_clouds_camera2, dista
             fused_pc = filter_outliers_sor(np.vstack((pcs1[0], pcs2[0])))
             fused_point_clouds.append((fused_pc, class_id))
             print(f"Directly fused single object with class_id {class_id}")
+            visualize_point_cloud(fused_pc, title=f"Fused Point Cloud for Class {class_id}")
 
         # If there are multiple point clouds with the same class ID from each camera, we need to find the best match
         else:
@@ -177,11 +178,13 @@ def fuse_point_clouds_centroid(point_clouds_camera1, point_clouds_camera2, dista
                     # Remove the matched point cloud from the list of point clouds from camera 2 to prevent duplicate fusion
                     pcs2 = [pc for pc in pcs2 if not point_clouds_equal(pc, best_match)]
                     print(f"Fused based on centroid distance {best_distance} for class_id {class_id}")
+                    visualize_point_cloud(fused_pc, title=f"Fused Point Cloud for Class {class_id}")
 
                 # If no match was found, simply add the point cloud from camera 1 to the fused point clouds
                 else:
                     fused_point_clouds.append((pc1, class_id))
                     print(f"No match found for Class {class_id}. Added original pc1.")
+                    visualize_point_cloud(pc1, title=f"Original Point Cloud for Class {class_id}")
 
             # If any point clouds remain in the list from camera 2, add them to the fused point clouds
             for pc2 in pcs2:
@@ -248,14 +251,14 @@ def main():
     # Define the transformation matrices from the chessboard to the camera frames
     # These matrices can be obtained from the extrinsic calibration process
 
-    T_chess_cam1 = np.array([[0.6653, 0.4827, -0.5696, 0.5868],
-                             [-0.7466, 0.4314, -0.5065, 0.7718],
-                             [0.0012, 0.7622, 0.6473, -0.7245],
+    T_chess_cam1 = np.array([[0.8755, 0.2677, -0.4023, 0.5703],
+                             [-0.4832, 0.4857, -0.7284, 1.1320],
+                             [0.0004, 0.8321, 0.5546, -0.7219],
                              [0.0000, 0.0000, 0.0000, 1.0000]])
 
-    T_chess_cam2 = np.array([[0.3981, -0.6302, 0.6666, -0.5739],
-                             [0.9173, 0.2688, -0.2937, 0.3581],
-                             [0.0059, 0.7284, 0.6851, -0.6835],
+    T_chess_cam2 = np.array([[0.5045, -0.4021, 0.7641, -0.8758],
+                             [0.8633, 0.2236, -0.4524, 0.8031],
+                             [0.0110, 0.8879, 0.4600, -0.7207],
                              [0.0000, 0.0000, 0.0000, 1.0000]])
 
     T_robot_chess = np.array([[-1.0000, 0.0000, 0.0000, 0.3580],
