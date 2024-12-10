@@ -5,16 +5,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="451445bc-3695-4851-ba1f-d170bd89a032" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/2cam/2cams_mask_gpu.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/2cam/2cams_new.py" beforeDir="false" afterPath="$PROJECT_DIR$/2cam/2cams_new.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/2cam/2cams_novis.py" beforeDir="false" afterPath="$PROJECT_DIR$/2cam/2cams_novis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/2cam/2cams_new.py" beforeDir="false" afterPath="$PROJECT_DIR$/2cam/2cams_mask_cpu.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/2cam/2cams_novis_extended.py" beforeDir="false" afterPath="$PROJECT_DIR$/2cam/2cams_novis_extended.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/2cam/barchart.py" beforeDir="false" afterPath="$PROJECT_DIR$/2cam/visualizer_performance.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/2cam/fps_log.csv" beforeDir="false" afterPath="$PROJECT_DIR$/2cam/fps_log.csv" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/2cam/plots/average_timing_per_step.png" beforeDir="false" afterPath="$PROJECT_DIR$/2cam/plots/average_timing_per_step.png" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/2cam/plots/fps_over_time.png" beforeDir="false" afterPath="$PROJECT_DIR$/2cam/plots/fps_over_time.png" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/2cam/timings.csv" beforeDir="false" afterPath="$PROJECT_DIR$/2cam/timings.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/2cam/visualizer.py" beforeDir="false" afterPath="$PROJECT_DIR$/2cam/visualizer_fps.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -55,6 +53,9 @@
   "keyToString": {
     "Python.2cams.executor": "Run",
     "Python.2cams_edit.executor": "Run",
+    "Python.2cams_final.executor": "Run",
+    "Python.2cams_mask_cpu.executor": "Run",
+    "Python.2cams_mask_gpu.executor": "Run",
     "Python.2cams_new.executor": "Run",
     "Python.2cams_novis.executor": "Run",
     "Python.2cams_novis_extended.executor": "Run",
@@ -124,8 +125,8 @@
       <recent name="$PROJECT_DIR$/1cam" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.2cams_new">
-    <configuration name="2cams_new" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+  <component name="RunManager" selected="Python.2cams_mask_gpu">
+    <configuration name="2cams_mask_cpu" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="RT-3D-Reconstruction" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -139,7 +140,7 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/2cam/2cams_new.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/2cam/2cams_mask_cpu.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -148,7 +149,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="2cams_novis" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="2cams_mask_gpu" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="RT-3D-Reconstruction" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -162,7 +163,7 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/2cam/2cams_novis.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/2cam/2cams_mask_gpu.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -242,11 +243,11 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.2cams_new" />
-        <item itemvalue="Python.2cams_novis_extended" />
+        <item itemvalue="Python.2cams_mask_gpu" />
         <item itemvalue="Python.visualizer_performance" />
+        <item itemvalue="Python.2cams_mask_cpu" />
         <item itemvalue="Python.visualizer_fps" />
-        <item itemvalue="Python.2cams_novis" />
+        <item itemvalue="Python.2cams_novis_extended" />
       </list>
     </recent_temporary>
   </component>
@@ -326,9 +327,9 @@
           <option name="timeStamp" value="14" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/2cam/2cams_new.py</url>
-          <line>529</line>
-          <option name="timeStamp" value="18" />
+          <url>file://$PROJECT_DIR$/2cam/2cams_mask_cpu.py</url>
+          <line>704</line>
+          <option name="timeStamp" value="22" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
@@ -348,7 +349,8 @@
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$visualizer.coverage" NAME="visualizer Coverage Results" MODIFIED="1733730267965" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/2cam" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$Capture_Pointcloud.coverage" NAME="Capture_Pointcloud Coverage Results" MODIFIED="1730887875968" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$Pointcloud.coverage" NAME="Pointcloud Coverage Results" MODIFIED="1732527324273" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$2cams_novis_extended.coverage" NAME="2cams_novis_extended Coverage Results" MODIFIED="1733755645291" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/2cam" />
+    <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$2cams_final.coverage" NAME="2cams_mask_cpu Coverage Results" MODIFIED="1733841094242" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/2cam" />
+    <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$2cams_novis_extended.coverage" NAME="2cams_novis_extended Coverage Results" MODIFIED="1733760903347" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/2cam" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$2cams_plotly.coverage" NAME="2cams_plotly Coverage Results" MODIFIED="1732023473521" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/2cam" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$live_pointcloud.coverage" NAME="live_pointcloud Coverage Results" MODIFIED="1732093252905" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$Multithreading_2cams.coverage" NAME="Multithreading-2cams Coverage Results" MODIFIED="1730797521922" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
@@ -360,13 +362,13 @@
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$depth_sensing__2_.coverage" NAME="depth_sensing (2) Coverage Results" MODIFIED="1732528258164" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/depth_sensing" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$matching.coverage" NAME="matching Coverage Results" MODIFIED="1731331049129" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$2cams_plotly__1_.coverage" NAME="2cams_plotly (1) Coverage Results" MODIFIED="1731932621806" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/2cam" />
-    <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$visualizer_barchart.coverage" NAME="visualizer_performance Coverage Results" MODIFIED="1733751071912" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/2cam" />
+    <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$visualizer_barchart.coverage" NAME="visualizer_performance Coverage Results" MODIFIED="1733841794022" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/2cam" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$tes.coverage" NAME="tes Coverage Results" MODIFIED="1732626410170" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/depth_sensing" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$get_pointcloud__1_.coverage" NAME="get_pointcloud (1) Coverage Results" MODIFIED="1732626393065" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/depth_sensing" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$rt_tracking_edit.coverage" NAME="rt-tracking-edit Coverage Results" MODIFIED="1730812670845" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$rt_tracking.coverage" NAME="rt-tracking Coverage Results" MODIFIED="1733145357356" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/1cam" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$main.coverage" NAME="main Coverage Results" MODIFIED="1733731225722" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/2cam" />
-    <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$2cams_new.coverage" NAME="2cams_new Coverage Results" MODIFIED="1733757548818" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/2cam" />
+    <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$2cams_new.coverage" NAME="2cams_mask_gpu Coverage Results" MODIFIED="1733842238883" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/2cam" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$get_pointcloud2.coverage" NAME="get_pointcloud2 Coverage Results" MODIFIED="1732528771438" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$test.coverage" NAME="test Coverage Results" MODIFIED="1733227674591" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$barchart.coverage" NAME="barchart Coverage Results" MODIFIED="1733304583176" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/2cam" />
@@ -379,7 +381,7 @@
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$rt_tracking_benchmarking.coverage" NAME="rt_tracking-benchmarking Coverage Results" MODIFIED="1730727898594" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$rt_tracking_benchmarking2.coverage" NAME="rt-tracking-benchmarking2 Coverage Results" MODIFIED="1730728964131" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$2cams_novis.coverage" NAME="2cams_novis Coverage Results" MODIFIED="1733734032894" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/2cam" />
-    <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$visualizer_fps.coverage" NAME="visualizer_fps Coverage Results" MODIFIED="1733751059801" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/2cam" />
+    <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$visualizer_fps.coverage" NAME="visualizer_fps Coverage Results" MODIFIED="1733839111114" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/2cam" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$depth_sensing__1_.coverage" NAME="depth_sensing (1) Coverage Results" MODIFIED="1732530489885" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/depth_sensing" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$viewer.coverage" NAME="viewer Coverage Results" MODIFIED="1732530102941" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/depth_sensing/ogl_viewer" />
   </component>
