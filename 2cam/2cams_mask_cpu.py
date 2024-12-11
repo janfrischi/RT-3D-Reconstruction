@@ -520,15 +520,15 @@ def main():
 
             # Downsample the point clouds
             # TODO: Check how the voxel size affects the performance of the pipeline
-            point_cloud1_workspace = downsample_point_cloud_gpu(point_cloud1_workspace_np_cropped, voxel_size=0.005)
-            point_cloud2_workspace = downsample_point_cloud_gpu(point_cloud2_workspace_np_cropped, voxel_size=0.005)
+            point_cloud1_workspace = downsample_point_cloud_gpu(point_cloud1_workspace_np_cropped, voxel_size=0.01)
+            point_cloud2_workspace = downsample_point_cloud_gpu(point_cloud2_workspace_np_cropped, voxel_size=0.01)
             fused_point_cloud_ws = torch.cat((point_cloud1_workspace, point_cloud2_workspace), dim=0)
+            # SOR removal
+            #fused_point_cloud_ws = filter_outliers_sor_gpu(fused_point_cloud_ws, nb_neighbors=20, std_ratio=1.5)
             # Convert to numpy array
             fused_point_cloud_ws = fused_point_cloud_ws.cpu().numpy()
-            visualize_point_cloud(fused_point_cloud_ws, title="Fused Workspace before SOR")
-            # SOR removal
             fused_point_cloud_ws = filter_outliers_sor(fused_point_cloud_ws, nb_neighbors=20, std_ratio=1.5)
-            visualize_point_cloud(fused_point_cloud_ws, title="Fused Workspace after SOR")
+            #visualize_point_cloud(fused_point_cloud_ws, title="Fused Workspace after SOR")
 
             point_cloud_end_time = time.time()
             timings["Point Cloud Processing"].append(point_cloud_end_time - point_cloud_start_time)
@@ -595,7 +595,7 @@ def main():
                         point_cloud_cam1_transformed = np.dot(rotation_robot_cam1, point_cloud_cam1.T).T + origin_cam1
                         # Down sampling the point cloud
                         point_cloud_cam1_transformed = downsample_point_cloud(point_cloud_cam1_transformed,
-                                                                              voxel_size=0.005)
+                                                                              voxel_size=0.01)
                         # Add the down sampled point cloud and class ID to this cameras point cloud list
                         point_clouds_camera1.append((point_cloud_cam1_transformed, int(class_ids1[i])))
                         print(f"Class ID: {class_ids1[i]} ({class_names[class_ids1[i]]}) in Camera Frame 1")
@@ -619,7 +619,7 @@ def main():
 
                         # Down sampling the point cloud
                         point_cloud_cam2_transformed = downsample_point_cloud(point_cloud_cam2_transformed,
-                                                                              voxel_size=0.005)
+                                                                              voxel_size=0.01)
                         point_clouds_camera2.append((point_cloud_cam2_transformed, int(class_ids2[i])))
                         print(f"Class ID: {class_ids2[i]} ({class_names[class_ids2[i]]}) in Camera Frame 2")
 
@@ -649,15 +649,13 @@ def main():
             else:
                 fused_pc_objects_concatenated = np.empty((0, 3))  # or handle the empty case appropriately
 
-            # Subtract the fused point cloud of the objects from the workspace point cloud -> Using KDTree
-            point_cloud_ws_subtracted = subtract_point_clouds(fused_point_cloud_ws, fused_pc_objects_concatenated, distance_threshold=0.06)
-            print(f"Workspace Point Cloud Subtracted shape - KDTree: {point_cloud_ws_subtracted.shape}")
 
+            # Subtract the fused point cloud of the objects from the workspace point cloud
             point_cloud_ws_subtracted_1 = subtract_point_clouds_gpu(fused_point_cloud_ws, fused_pc_objects_concatenated, distance_threshold=0.06)
 
             # Visualize the subtracted point cloud
-            visualize_point_cloud(point_cloud_ws_subtracted, title="Workspace Point Cloud Subtracted - KDTree")
-            visualize_point_cloud(point_cloud_ws_subtracted_1, title="Workspace Point Cloud Subtracted - GPU")
+            #visualize_point_cloud(point_cloud_ws_subtracted, title="Workspace Point Cloud Subtracted - KDTree")
+            #visualize_point_cloud(point_cloud_ws_subtracted_1, title="Workspace Point Cloud Subtracted - GPU")
 
             end_time_subtraction = time.time()
             timings["Point Cloud Subtraction"].append(end_time_subtraction - start_time_subtraction)

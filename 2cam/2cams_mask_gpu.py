@@ -5,8 +5,6 @@ import time
 import torch
 import torch.nn.functional as F
 import open3d as o3d
-import open3d.core as o3c
-import matplotlib.pyplot as plt
 import csv
 from ultralytics import YOLO
 
@@ -31,7 +29,7 @@ class_names = {0: "Person",
                66: "Keyboard",
                73: "Book"}
 
-# Dictionary to store cumulative timings
+# Dictionary to store cumulative timings for Benchmarking
 timings = {
     "Frame Retrieval": [],
     "Depth Retrieval": [],
@@ -72,13 +70,14 @@ def convert_mask_to_3d_points(mask_indices, depth_map, cx, cy, fx, fy):
 
 # Perform down sampling directly on the GPU
 def downsample_point_cloud_gpu(point_cloud, voxel_size):
+    # Round the point cloud to the nearest voxel grid -> all points in the same voxel will have the same coordinates
     rounded = torch.round(point_cloud / voxel_size) * voxel_size
     downsampled_points = torch.unique(rounded, dim=0)
     return downsampled_points
 
 
 # Filter out the outliers in the point cloud using the Statistical Outlier Removal filter
-def filter_outliers_sor(point_cloud, nb_neighbors=20, std_ratio=5):
+def filter_outliers_sor(point_cloud, nb_neighbors=20, std_ratio=1.5):
     # Convert the numpy array to an Open3D point cloud
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(point_cloud)
@@ -88,6 +87,51 @@ def filter_outliers_sor(point_cloud, nb_neighbors=20, std_ratio=5):
 
     # Convert back to numpy array
     filtered_points = np.asarray(filtered_pcd.points)
+    return filtered_points
+
+def filter_outliers_sor_gpu(point_cloud, nb_neighbors=20, std_ratio=1.5):
+    """
+    Perform statistical outlier removal on a point cloud using GPU.
+
+    Args:
+        point_cloud (torch.Tensor): Input point cloud of shape (N, 3), on GPU.
+        nb_neighbors (int): Number of neighbors to consider for each point.
+        std_ratio (float): Standard deviation ratio for determining outliers.
+
+    Returns:
+        torch.Tensor: Filtered point cloud of shape (M, 3), on GPU.
+    """
+    num_points = point_cloud.shape[0]
+
+    # If the point cloud is too small, return it as-is
+    if num_points <= 1:
+        print("Point cloud too small for outlier removal. Skipping...")
+        return point_cloud
+
+    # Ensure nb_neighbors does not exceed the number of points
+    actual_neighbors = min(nb_neighbors, num_points - 1)
+
+    # Compute pairwise distances
+    distances = torch.cdist(point_cloud, point_cloud)
+
+    # Sort distances to find nearest neighbors (excluding self)
+    knn_distances, _ = torch.topk(distances, k=actual_neighbors + 1, largest=False, dim=1)
+    knn_distances = knn_distances[:, 1:]  # Exclude self-distance (always 0)
+
+    # Compute mean and standard deviation of distances
+    mean_distances = knn_distances.mean(dim=1)
+    std_distances = knn_distances.std(dim=1)
+
+    # Determine the threshold for outlier removal
+    threshold = mean_distances + std_ratio * std_distances
+
+    # Filter points whose mean distance exceeds the threshold
+    mask = mean_distances <= threshold
+    filtered_points = point_cloud[mask]
+
+    # Print the memory allocated for the distances tensor
+    print(f"Memory allocated for distances: {distances.element_size() * distances.nelement() / 1024 / 1024:.2f} MB")
+
     return filtered_points
 
 
@@ -157,7 +201,6 @@ def fuse_point_clouds_centroid(point_clouds_camera1, point_clouds_camera2, dista
             # Concatenate the point clouds along the vertical axis
             fused_pc = filter_outliers_sor(np.vstack((pcs1[0], pcs2[0])))
             fused_point_clouds.append((fused_pc, class_id))
-            print(f"Directly fused single object with class_id {class_id}")
 
         # If there are multiple point clouds with the same class ID from each camera, we need to find the best match
         else:
@@ -187,17 +230,14 @@ def fuse_point_clouds_centroid(point_clouds_camera1, point_clouds_camera2, dista
                     fused_point_clouds.append((fused_pc, class_id))
                     # Remove the matched point cloud from the list of point clouds from camera 2 to prevent duplicate fusion
                     pcs2 = [pc for pc in pcs2 if not point_clouds_equal(pc, best_match)]
-                    print(f"Fused based on centroid distance {best_distance} for class_id {class_id}")
 
                 # If no match was found, simply add the point cloud from camera 1 to the fused point clouds
                 else:
                     fused_point_clouds.append((pc1, class_id))
-                    print(f"No match found for Class {class_id}. Added original pc1.")
 
             # If any point clouds remain in the list from camera 2, add them to the fused point clouds
             for pc2 in pcs2:
                 fused_point_clouds.append((pc2, class_id))
-                print(f"Remaining pc2 added for Class {class_id}")
 
     return pcs1, pcs2, fused_point_clouds
 
@@ -207,13 +247,15 @@ def subtract_point_clouds_gpu(workspace_pc, objects_pc, distance_threshold=0.005
     workspace_tensor = torch.tensor(workspace_pc, dtype=torch.float32, device='cuda')
     objects_tensor = torch.tensor(objects_pc, dtype=torch.float32, device='cuda')
 
-    # Compute pairwise distances
+    # Compute pairwise distances, torch.cdist computes the pairwise Euclidean distances between two tensors
+    # distances[i,j] contains the ith point in workspace_tensor and the jth point in objects_tensor
     distances = torch.cdist(workspace_tensor, objects_tensor)
 
-    print(f"Distances shape: {distances.shape}")
+    print(f"Memory allocated for distances: {distances.element_size() * distances.nelement() / 1024 / 1024:.2f} MB")
 
     # Find points in the workspace tensor that are farther than the threshold from all points in the objects tensor
     min_distances, _ = distances.min(dim=1)
+    # If min_distances[i] > distance_threshold, the ith point is retained
     mask = min_distances > distance_threshold
 
     # Filter the workspace points based on the mask
@@ -429,11 +471,19 @@ def main():
             )
 
             # Downsample the point clouds
-            point_cloud1_workspace = downsample_point_cloud_gpu(point_cloud1_workspace_np_cropped, voxel_size=0.005)
-            point_cloud2_workspace = downsample_point_cloud_gpu(point_cloud2_workspace_np_cropped, voxel_size=0.005)
+            point_cloud1_workspace = downsample_point_cloud_gpu(point_cloud1_workspace_np_cropped, voxel_size=0.01)
+            point_cloud2_workspace = downsample_point_cloud_gpu(point_cloud2_workspace_np_cropped, voxel_size=0.01)
             fused_point_cloud_ws = torch.cat((point_cloud1_workspace, point_cloud2_workspace), dim=0)
+
+            # SOR filter the fused point cloud
+            #fused_point_cloud_ws = filter_outliers_sor_gpu(fused_point_cloud_ws, nb_neighbors=20, std_ratio=1.5)
+
             # Convert to numpy array
             fused_point_cloud_ws = fused_point_cloud_ws.cpu().numpy()
+
+            # SOR Filtering on the CPU
+            #fused_point_cloud_ws = filter_outliers_sor(fused_point_cloud_ws, nb_neighbors=20, std_ratio=1.5)
+
             print(f"Fused Point Cloud Workspace shape: {fused_point_cloud_ws.shape}")
             point_cloud_end_time = time.time()
             timings["Point Cloud Processing"].append(point_cloud_end_time - point_cloud_start_time)
@@ -447,7 +497,7 @@ def main():
                 classes=[39, 41],
                 persist=True,
                 retina_masks=True,
-                conf=0.3,
+                conf=0.1,
                 device=device,
                 tracker="ultralytics/cfg/trackers/bytetrack.yaml"
             )
@@ -458,7 +508,7 @@ def main():
                 classes=[39, 41],
                 persist=True,
                 retina_masks=True,
-                conf=0.3,
+                conf=0.1,
                 device=device,
                 tracker="ultralytics/cfg/trackers/bytetrack.yaml"
             )
@@ -502,7 +552,7 @@ def main():
                                                                 rotation_robot_cam1_torch.T) + origin_cam1_torch
 
                         # Downsample the point cloud of camera 1 on the GPU
-                        point_cloud_cam1_downsampled = downsample_point_cloud_gpu(point_cloud_cam1_transformed,voxel_size=0.005)
+                        point_cloud_cam1_downsampled = downsample_point_cloud_gpu(point_cloud_cam1_transformed,voxel_size=0.01)
 
                         # Move transformed points to CPU for further processing
                         point_cloud_cam1_downsampled_cpu = point_cloud_cam1_downsampled.cpu().numpy()
@@ -535,7 +585,7 @@ def main():
 
                         # Downsample the point cloud of camera 2 on the GPU
                         point_cloud_cam2_downsampled = downsample_point_cloud_gpu(point_cloud_cam2_transformed,
-                                                                                  voxel_size=0.005)
+                                                                                  voxel_size=0.01)
                         # Move transformed points to CPU for further processing
                         point_cloud_cam2_downsampled_cpu = point_cloud_cam2_downsampled.cpu().numpy()
 
@@ -567,8 +617,7 @@ def main():
 
             start_time_subtraction = time.time()
             # Subtract the fused point cloud of the objects from the workspace point cloud
-            workspace_pc_subtracted = subtract_point_clouds_gpu(fused_point_cloud_ws, fused_pc_objects_concatenated, distance_threshold=0.02)
-            #workspace_pc_subtracted = subtract_point_clouds(fused_point_cloud_ws, fused_pc_objects_concatenated, distance_threshold=0.02)
+            workspace_pc_subtracted = subtract_point_clouds_gpu(fused_point_cloud_ws, fused_pc_objects_concatenated, distance_threshold=0.06)
             # visualize_point_cloud(fused_point_cloud_ws, title="Fused Point Cloud Workspace")
             # visualize_point_cloud(workspace_pc_subtracted, title="Subtracted Point Cloud Workspace")
             end_time_subtraction = time.time()

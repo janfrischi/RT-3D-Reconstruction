@@ -35,7 +35,7 @@ plt.xlabel("Pipeline Steps", fontsize=14)
 plt.ylabel("Time (ms)", fontsize=14)
 plt.xticks(rotation=45, ha="right", fontsize=12)
 plt.tight_layout()
-plt.savefig("plots/average_timing_per_step.png")
+plt.savefig("plots/average_timing_per_step.png", dpi=600)
 # Show the plot
 plt.show()
 
