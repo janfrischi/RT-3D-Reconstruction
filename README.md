@@ -1,8 +1,6 @@
 # **Real-Time Vision Pipeline for 3D Object Detection, Segmentation, and Reconstruction**
 
-This repository implements a modular, real-time vision pipeline for object detection, segmentation, and 3D reconstruction using **YOLOv11** and **ZED Stereo Cameras**. The project leverages GPU acceleration and advanced computer vision techniques to create a scalable solution for collaborative robotics, workspace analysis, and dynamic object tracking.
-
----
+This repository implements a modular, real-time vision pipeline for object detection, segmentation, and 3D reconstruction using **YOLO11** and a set of **ZED Stereo Cameras**. The project leverages GPU acceleration and advanced computer vision techniques to create a scalable solution for collaborative robotics, workspace analysis, and dynamic object tracking.
 
 ## **Table of Contents**
 
@@ -25,22 +23,25 @@ This repository implements a modular, real-time vision pipeline for object detec
 7. [Troubleshooting](#troubleshooting)
    - [Common Issues and Solutions](#common-issues-and-solutions)
 
----
-
 ## **Features and Functionalities**
 
 ### **1. Real-Time Object Detection, Segmentation, and Tracking**
-- Utilizes **YOLOv11** for detecting and segmenting objects of interest (e.g., bottles, cups, laptops) in frames from stereo cameras.
-- Tracks object IDs across frames to ensure consistency.
+- Utilizes **YOLO11** for detecting and segmenting objects of interest (e.g., bottles, cups, laptops) in frames from stereo cameras.
+- Tracks objects and their IDs across frames to ensure consistency. The pipeline supports two tracking algorithms:
+  - **ByteTrack**: A lightweight, real-time object tracker that employs a simple yet effective online and real-time tracking algorithm.
+  - **DeepSORT**: A deep learning-based object tracker that combines appearance features and motion information for robust tracking.
 
 ### **2. 3D Reconstruction from Depth Maps**
 - Converts 2D segmentation masks into 3D point clouds using ZED stereo camera depth maps and camera intrinsics.
 - Improves accuracy and efficiency through depth-to-3D mapping.
 
 ### **3. Advanced Point Cloud Processing**
-- **Downsampling**: Reduces point cloud density using voxel grid filtering.
+- **Down sampling**: Reduces point cloud density using voxel grid filtering.
 - **Outlier Removal**: Removes statistical outliers to enhance point cloud quality.
+- **Cropping**: Crops point clouds to specific regions of interest.
+- **Transformation**: Transforms point clouds to a common reference frame for fusion.
 - **Fusion**: Combines point clouds from multiple cameras based on centroid distances to create a unified 3D representation.
+- **Subtraction**: Removes the reconstructed object point cloud from the workspace.
 
 ### **4. Interactive Visualization**
 - Displays annotated video frames with bounding boxes, segmentation masks, and object labels.
@@ -55,10 +56,8 @@ This repository implements a modular, real-time vision pipeline for object detec
 - Easily extendable for future functionalities.
 
 ### **6. Performance Monitoring**
-- Logs real-time FPS and timing metrics (e.g., frame retrieval, YOLO inference, point cloud processing) to CSV files for benchmarking.
-
----
-
+- Logs real-time FPS and timing metrics for each pipeline stage.
+- Enables performance analysis and optimization for specific setups.
 ## **Getting Started**
 
 ### **Prerequisites**
@@ -68,7 +67,7 @@ This repository implements a modular, real-time vision pipeline for object detec
 
 2. **Software**:
    - Python >= 3.8
-   - CUDA-enabled GPU drivers.
+   - CUDA-enabled GPU drivers
    - **ZED SDK and Python API**:
      - Install the [ZED SDK](https://www.stereolabs.com/zed-sdk/) and its Python API, which are required for camera access and depth map generation.
      - Detailed installation instructions can be found on the [Stereolabs documentation page](https://www.stereolabs.com/docs/).
@@ -76,8 +75,8 @@ This repository implements a modular, real-time vision pipeline for object detec
 ### **Installation**
 1. Clone the repository:
    ```bash
-   git clone https://github.com/username/vision-pipeline.git
-   cd vision-pipeline
+   git clone https://github.com/janfrischi/RT-3D-Reconstruction.git
+   cd your-directory
    ```
 
 2. Install required dependencies from the `requirements.txt` file:
@@ -90,33 +89,32 @@ This repository implements a modular, real-time vision pipeline for object detec
    - You can download it from the [Ultralytics repository](https://github.com/ultralytics).
 
 4. Connect ZED cameras and set up the environment.
-
----
+   - Ensure the ZED cameras are connected and recognized by the system. Use USB 3.0 10GB/s ports for optimal performance.
+   - Set up the ZED SDK and Python API for camera access.
+   - Make sure the camera serial numbers are correctly set in the code.
 
 ## **Usage**
-
-### **Running the Pipeline**
-Run the main script to start the real-time pipeline:
-```bash
-python main.py
-```
 
 ### **Available Scripts**
 This repository provides multiple scripts tailored to specific hardware configurations and use cases:
 
 1. **`2cams.py`**:
    - Runs the vision pipeline with two ZED cameras.
-   - General-purpose script, suitable for non-optimized use cases where real-time performance is not critical.
+   - Streamlined version that imports all necessary functions from the vision_pipeline_utils.py file. This script is preconfigured with default parameters, such as voxel_size=0.005, making it ready to use out of the box.
 
 2. **`2cams_mask_cpu.py`**:
    - Optimized for running the vision pipeline with CPU-based mask processing.
-   - Ideal when GPU resources are unavailable or limited.
+   - Ideal when GPU resources are limited.
 
 3. **`2cams_mask_gpu.py`**:
    - Optimized for GPU-based mask processing, leveraging CUDA for enhanced performance.
    - Recommended for real-time applications where high-speed processing is required.
 
----
+4. **`visualizer_fps.py`**: 
+   - Uses the fps_log.csv file to visualize the frame rate over time.
+
+5. **`visualizer_performance.py`**:
+   - Uses the timings.csv file to visualize the performance metrics over time.r3oy
 
 ## **Performance Benchmarking**
 
@@ -162,7 +160,3 @@ For a detailed description of functions, see the **[Core Functions](#core-functi
 
 3. **Model Not Found**:
    - Ensure the YOLO model file is stored at the specified path (`models/yolo11x-seg.pt`).
-
----
-
-This update ensures the inclusion of the **ZED SDK** as a prerequisite, with a direct link to the relevant documentation for user guidance. Let me know if you need any more changes!
