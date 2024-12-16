@@ -1,7 +1,6 @@
 # **Real-Time Vision Pipeline for 3D Object Detection, Segmentation, and Reconstruction**
 
-This repository implements a modular, real-time vision pipeline for object detection, segmentation, and 3D reconstruction using **YOLO11** and a set of **ZED Stereo Cameras**. The project leverages GPU acceleration and advanced computer vision techniques to create a scalable solution for collaborative robotics, workspace analysis, and dynamic object tracking.
-
+This repository implements a modular, real-time vision pipeline for object detection, segmentation, and 3D reconstruction using YOLO11 and a set of ZED Stereo Cameras. The project leverages GPU acceleration and advanced computer vision techniques to create a scalable solution for collaborative robotics, including tasks such as manipulation and obstacle avoidance, workspace analysis, and dynamic object tracking
 ## **Table of Contents**
 
 1. [Features and Functionalities](#1-features-and-functionalities)
@@ -87,7 +86,7 @@ This repository implements a modular, real-time vision pipeline for object detec
 3. Download the YOLOv11 model:
    - Ensure the YOLOv11 model `yolo11x-seg.pt` or any other size is stored in the `models/` directory.
    - You can download it from the [Ultralytics repository](https://github.com/ultralytics).
-   - Another option is to simply use `model = YOLO("models/yolo11x-seg.pt").to(device)` in the code to download the model automatically.
+   - Another option is to simply use `model = YOLO("yolo11x-seg.pt").to(device)` in the code to download the model automatically.
 
 4. Connect ZED cameras and set up the environment.
    - Ensure the ZED cameras are connected and recognized by the system. Use USB 3.0 10GB/s ports for optimal performance.
