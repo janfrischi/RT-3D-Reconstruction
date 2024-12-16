@@ -4,7 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="451445bc-3695-4851-ba1f-d170bd89a032" name="Changes" comment="" />
+    <list default="true" id="451445bc-3695-4851-ba1f-d170bd89a032" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/2cam/vision_pipeline_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/2cam/vision_pipeline_utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README2.md" beforeDir="false" afterPath="$PROJECT_DIR$/README2.md" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -289,7 +294,7 @@
       <workItem from="1732000905607" duration="23182000" />
       <workItem from="1732519348880" duration="2938000" />
       <workItem from="1732522298802" duration="53455000" />
-      <workItem from="1734334090252" duration="10461000" />
+      <workItem from="1734334090252" duration="14883000" />
     </task>
     <servers />
   </component>
@@ -348,7 +353,7 @@
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$get_pointcloud.coverage" NAME="get_pointcloud Coverage Results" MODIFIED="1732528053934" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/depth sensing/python" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$2cams_edit.coverage" NAME="2cams_edit Coverage Results" MODIFIED="1730811540474" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$rt_tracking_novis.coverage" NAME="rt-tracking-novis Coverage Results" MODIFIED="1730732826785" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$2cams_mask_gpu.coverage" NAME="2cams_mask_gpu Coverage Results" MODIFIED="1734344474681" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/2cam" />
+    <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$2cams_mask_gpu.coverage" NAME="2cams_mask_gpu Coverage Results" MODIFIED="1734344642143" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/2cam" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$live_pointcloud.coverage" NAME="live_pointcloud Coverage Results" MODIFIED="1732093252905" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$rt_tracking_plotly.coverage" NAME="rt_tracking_plotly Coverage Results" MODIFIED="1732023665905" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/1cam" />
     <SUITE FILE_PATH="coverage/RT_3D_Reconstruction$rt_tracking_benchmarking2.coverage" NAME="rt-tracking-benchmarking2 Coverage Results" MODIFIED="1730728964131" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />

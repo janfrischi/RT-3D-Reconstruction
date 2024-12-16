@@ -57,51 +57,6 @@ def filter_outliers_sor(point_cloud, nb_neighbors=20, std_ratio=1.5):
     filtered_points = np.asarray(filtered_pcd.points)
     return filtered_points
 
-def filter_outliers_sor_gpu(point_cloud, nb_neighbors=20, std_ratio=1.5):
-    """
-    Perform statistical outlier removal on a point cloud using GPU.
-
-    Args:
-        point_cloud (torch.Tensor): Input point cloud of shape (N, 3), on GPU.
-        nb_neighbors (int): Number of neighbors to consider for each point.
-        std_ratio (float): Standard deviation ratio for determining outliers.
-
-    Returns:
-        torch.Tensor: Filtered point cloud of shape (M, 3), on GPU.
-    """
-    num_points = point_cloud.shape[0]
-
-    # If the point cloud is too small, return it as-is
-    if num_points <= 1:
-        print("Point cloud too small for outlier removal. Skipping...")
-        return point_cloud
-
-    # Ensure nb_neighbors does not exceed the number of points
-    actual_neighbors = min(nb_neighbors, num_points - 1)
-
-    # Compute pairwise distances
-    distances = torch.cdist(point_cloud, point_cloud)
-
-    # Sort distances to find nearest neighbors (excluding self)
-    knn_distances, _ = torch.topk(distances, k=actual_neighbors + 1, largest=False, dim=1)
-    knn_distances = knn_distances[:, 1:]  # Exclude self-distance (always 0)
-
-    # Compute mean and standard deviation of distances
-    mean_distances = knn_distances.mean(dim=1)
-    std_distances = knn_distances.std(dim=1)
-
-    # Determine the threshold for outlier removal
-    threshold = mean_distances + std_ratio * std_distances
-
-    # Filter points whose mean distance exceeds the threshold
-    mask = mean_distances <= threshold
-    filtered_points = point_cloud[mask]
-
-    # Print the memory allocated for the distances tensor
-    print(f"Memory allocated for distances: {distances.element_size() * distances.nelement() / 1024 / 1024:.2f} MB")
-
-    return filtered_points
-
 
 # Returns true if the two point clouds are equal
 def point_clouds_equal(pc1, pc2):
@@ -231,17 +186,33 @@ def subtract_point_clouds_gpu(workspace_pc, objects_pc, distance_threshold=0.005
 
     return filtered_points
 
+
 def retrieve_frames(zed1, zed2, image1, image2, timings):
+    # Record the start time for frame retrieval
     retrieval_start_time = time.time()
+
+    # Retrieve images from both ZED cameras
     zed1.retrieve_image(image1, view=sl.VIEW.LEFT)
     zed2.retrieve_image(image2, view=sl.VIEW.LEFT)
+
+    # Get the image data from the retrieved images
     frame1 = image1.get_data()
     frame2 = image2.get_data()
+
+    # Convert the images from BGRA to BGR color space
     frame1 = cv2.cvtColor(frame1, cv2.COLOR_BGRA2BGR)
     frame2 = cv2.cvtColor(frame2, cv2.COLOR_BGRA2BGR)
+
+    # Record the end time for frame retrieval
     retrieval_end_time = time.time()
+
+    # Calculate and store the time taken for frame retrieval
     timings["Frame Retrieval"].append(retrieval_end_time - retrieval_start_time)
+
+    # Print the time taken for frame retrieval
     print(f"Frame retrieval time: {retrieval_end_time - retrieval_start_time:.4f} seconds")
+
+    # Return the retrieved frames
     return frame1, frame2
 
 def retrieve_depth_maps(zed1, zed2, depth1, depth2, timings):

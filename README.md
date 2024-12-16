@@ -1,165 +1,141 @@
-# Vision-Based Object Detection and Point Cloud Processing
+# **Real-Time Vision Pipeline for 3D Object Detection, Segmentation, and Reconstruction**
 
-This project implements a vision-based pipeline for object detection, tracking, and point cloud processing using YOLO for segmentation and the ZED stereo camera system for depth sensing. The main objective of this project is to detect / segment and track specific objects in real-time. Using the segmentations masks wegenerate 3D point clouds for these objects, and process the point clouds to remove noise and improve data quality.
+This project implements a modular, real-time vision pipeline for object detection, segmentation, and 3D reconstruction using **YOLOv11** and a set **ZED Stereo Cameras**. The project leverages GPU acceleration and advanced computer vision techniques to create a scalable solution for collaborative robotics, workspace analysis, and dynamic object tracking.
 
-- [Key Components and Functionalities](#key-components-and-functionalities)
-- [Requirements](#requirements)
-- [Installation](#installation)
-- [File Structure](#file-structure)
-- [Configuration](#configuration)
-  - [Camera Configuration](#camera-configuration)
-  - [Object Detection and Tracking Configuration](#object-detection-and-tracking-configuration)
-  - [Class Definitions](#class-definitions)
-    - [`CameraManager`](#cameramanager)
-    - [`YOLOModel`](#yolomodel)
-    - [`PointCloudProcessor`](#pointcloudprocessor)
-    - [`MainApp`](#mainapp)
-  - [Sample Configuration in `main.py`](#sample-configuration-in-mainpy)
-  - [Transformations](#transformations)
-  - [Example Usage in `main.py`](#example-usage-in-mainpy)
-- [Notes](#notes)
-- [Troubleshooting](#troubleshooting)
+## **Table of Contents**
+
+1. [Features and Functionalities](#features-and-functionalities)
+   - [Real-Time Object Detection, Segmentation, and Tracking](#1-real-time-object-detection-segmentation-and-tracking)
+   - [3D Reconstruction from Depth Maps](#2-3d-reconstruction-from-depth-maps)
+   - [Advanced Point Cloud Processing](#3-advanced-point-cloud-processing)
+   - [Interactive Visualization](#4-interactive-visualization)
+   - [Modular and Extensible Design](#5-modular-and-extensible-design)
+   - [Performance Monitoring](#6-performance-monitoring)
+2. [Getting Started](#getting-started)
+   - [Prerequisites](#prerequisites)
+   - [Installation](#installation)
+3. [Usage](#usage)
+   - [Running the Pipeline](#running-the-pipeline)
+4. [Performance Benchmarking](#performance-benchmarking)
+5. [Core Functions](#core-functions)
+6. [Notes](#notes)
+7. [Troubleshooting](#troubleshooting)
+   - [Common Issues and Solutions](#common-issues-and-solutions)
 
 
-## Key Components and Functionalities
+## **Features and Functionalities**
 
-1. ** Real Time Object Detection/Segmentation and Tracking**:
-   - YOLO model detects specific objects in frames from both cameras.
-   
-2. **Depth Map Conversion to 3D Points**:
-   - The depth information from the ZED stereo cameras is used to convert 2D mask pixels into 3D coordinates.
-   
-3. **Point Cloud Processing**:
-   - After generating point clouds from detected objects, the points are downsampled and outliers are removed.
-   - Point clouds from both cameras are fused based on centroid distance to generate a comprehensive 3D representation.
+### **1. Real-Time Object Detection, Segmentation, and Tracking**
+- Utilizes **YOLOv11** for detecting and segmenting objects of interest (e.g., bottles, cups, laptops) in frames from stereo cameras.
+- Tracks object IDs across frames to ensure consistency.
 
-4. **Display and Visualization**:
-   - Annotated frames with bounding boxes and object labels are displayed, showing the objects detected in real-time.
-   - The frame rate (FPS) is displayed on each frame for performance monitoring.
+### **2. 3D Reconstruction from Depth Maps**
+- Converts 2D segmentation masks into 3D point clouds using ZED stereo camera depth maps and camera intrinsics.
+- Improves accuracy and efficiency through depth-to-3D mapping.
 
-5. **Modular Architecture**: 
-   - The project is organized into multiple classes to manage cameras, object detection models, and point cloud processing.
-   - Each class has specific functionalities and can be easily extended or modified.
+### **3. Advanced Point Cloud Processing**
+- **Downsampling**: Reduces point cloud density using voxel grid filtering.
+- **Outlier Removal**: Removes statistical outliers to enhance point cloud quality.
+- **Fusion**: Combines point clouds from multiple cameras based on centroid distances to create a unified 3D representation.
 
-## Requirements
+### **4. Interactive Visualization**
+- Displays annotated video frames with bounding boxes, segmentation masks, and object labels.
+- Visualizes 3D point clouds of detected objects and the workspace using Open3D.
+- Displays real-time frame rate (FPS) for performance monitoring.
 
-- Python 3.8+
-- Libraries:
-  - `numpy`
-  - `opencv-python`
-  - `torch` (with CUDA support if using a GPU)
-  - `pyzed` (for interfacing with ZED cameras)
-  - `open3d` (for point cloud processing)
-  - `ultralytics` (for YOLO model)
+### **5. Modular and Extensible Design**
+- Organized into reusable components for:
+  - Camera management
+  - Object detection and segmentation
+  - Point cloud generation and fusion
+- Easily extendable for future functionalities.
 
-## Installation
+### **6. Performance Monitoring**
+- Logs real-time FPS and timing metrics (e.g., frame retrieval, YOLO inference, point cloud processing) to CSV files for benchmarking.
 
-1. **Clone the repository**:
+## **Getting Started**
+
+### **Prerequisites**
+1. **Hardware**:
+   - NVIDIA RTX 4090 or equivalent GPU.
+   - ZED Stereo Cameras.
+
+2. **Software**:
+   - Python >= 3.8
+   - CUDA-enabled GPU drivers.
+
+### **Installation**
+1. Clone the repository:
    ```bash
    git clone https://github.com/janfrischi/RT-3D-Reconstruction.git
-   cd RT_3D_Reconstruction
+   cd vision-pipeline
    ```
 
-2. **Install required libraries**:
+2. Install required dependencies from `requirements.txt` file using pip:
    ```bash
-   pip install numpy opencv-python torch pyzed open3d ultralytics
+   pip install -r requirements.txt
    ```
 
-3. **Download the YOLO model**: Place the model file `yolo11l-seg.pt` in the `models/` directory if not already there.
+3. Download the YOLOv11 model:
+   - Ensure the YOLOv11 model (`yolo11x-seg.pt`) is stored in the `models/` directory.
+   - You can download it from the [Ultralytics repository](https://github.com/ultralytics).
 
-## File Structure
+4. Connect ZED cameras and set up the environment.
 
-- `main.py`: Initializes the YOLO model, ZED cameras, and transformation matrices, then runs the main application.
-- `object_detection_and_point_cloud_processing.py`: Contains classes for managing cameras, YOLO model tracking, point cloud processing, and the main application loop.
+## **Usage**
 
-## Configuration
+### **Available Scripts**
+This repository provides multiple scripts tailored to specific hardware configurations and use cases:
 
-### Camera Configuration
+1. **`2cams.py`**:
+   - Runs the vision pipeline with two ZED cameras.
+   - General-purpose script, suitable for non-optimized use cases where real-time performance is not critical.
 
-- **Camera Serial Numbers**: The serial numbers of the ZED cameras (`sn_cam1` and `sn_cam2`) need to be specified in `main.py` to correctly initialize the cameras.
-- **Transformation Matrices**:
-  - `T_chess_cam1`, `T_chess_cam2`: Transformations from the chessboard to each camera's frame.
-  - `T_robot_chess`: Transformation from the robot's base frame to the chessboard.
-  
-- **Camera Parameters**:
-  - `resolution`: Camera resolution (e.g., "HD720").
-  - `fps`: Frames per second.
-  - `depth_mode`: Depth mode (e.g., "NEURAL").
-  - `min_distance`: Minimum distance for depth sensing.
-  - `units`: Depth measurement units (e.g., "METER").
+2. **`2cams_mask_cpu.py`**:
+   - Optimized for running the vision pipeline with CPU-based mask processing.
+   - Ideal when GPU resources are unavailable or limited.
 
-### Object Detection and Tracking Configuration
+3. **`2cams_mask_gpu.py`**:
+   - Optimized for GPU-based mask processing, leveraging CUDA for enhanced performance.
+   - Recommended for real-time applications where high-speed processing is required.
 
-The `YOLOModel` class initializes the YOLO model for object detection and tracking with the following parameters:
-- `imgsz`: Image size for the model.
-- `classes`: List of class IDs to detect and track.
-- `conf`: Confidence threshold for detections.
-- `tracker`: Object tracker type (bytetrack or botsort).
+## **Performance Benchmarking**
 
-### Important Functions
+The pipeline tracks the following metrics for each frame:
+- **Frame Retrieval Time**: Time taken to retrieve frames from cameras.
+- **Depth Retrieval Time**: Time for generating depth maps.
+- **YOLO Inference Time**: Time for object detection and segmentation.
+- **Point Cloud Processing Time**: Time to process and fuse point clouds.
+- **Overall Loop Time**: Total time per frame.
 
-#### `retrieve_images_and_depths()`
+All timings are logged in `timings.csv` for analysis.
 
-Captures images and depth maps from both cameras.
+## **Core Functions**
 
-#### `track()`
+1. **`convert_mask_to_3d_points()`**: Converts 2D segmentation masks into 3D coordinates using depth maps.
+2. **`downsample_point_cloud_gpu()`**: Downsamples point clouds using voxel grid filtering on the GPU.
+3. **`crop_point_cloud_gpu()`**: Crops point clouds to specified boundaries.
+4. **`fuse_point_clouds_centroid()`**: Fuses point clouds from two cameras based on centroid distance.
+5. **`subtract_point_clouds_gpu()`**: Subtracts object point clouds from the workspace.
 
-Runs the YOLO model to detect and track objects in a given frame.
+For a detailed description of functions, see the **[Core Functions](#core-functions)** section.
 
-#### `erode_mask()`
 
-Erodes the mask to reduce noise.
-
-#### `convert_mask_to_3d_points()`
-
-Converts mask indices to 3D points using depth map values.
-
-#### `downsample_point_cloud()`
-
-Downsamples a point cloud to reduce the number of points.
-
-#### `filter_outliers_sor()`
-
-Filters outliers in the point cloud using statistical outlier removal.
-
-#### `fuse_point_clouds_centroid()`
-
-Fuses point clouds from two cameras based on centroid distance.
-
-#### `run()`
-
-Main loop to retrieve images, detect objects, generate point clouds, process data, and display annotated frames.
-
-#### `_process_masks()`
-
-Processes segmentation masks to generate and transform 3D points for each detected object.
-
-#### `_display_frames()`
-
-Displays annotated frames with object detections and frame rate.
-
-### Transformations
-
-Transformation matrices are used to calibrate the position of cameras and objects:
-- `T_chess_cam1`, `T_chess_cam2`: Transformations from chessboard to camera frame.
-- `T_robot_chess`: Transformation from robot frame to chessboard.
-
-### Example Usage in `main.py`
-
-```python
-app = MainApp(model_path, sn_cam1, sn_cam2, color_map, class_names, T_chess_cam1, T_chess_cam2, T_robot_chess, init_params1, init_params2)
-for fused_pc in app.run():
-    # Process each fused point cloud as needed
-    pass
-```
-
-## Notes
-
+## **Notes**
 - The code is designed to run in real-time, with optimizations for using CUDA if available.
 - The application runs in a loop until the `q` key is pressed.
 
-## Troubleshooting
 
-- **Camera Initialization Error**: Ensure that the correct serial numbers are provided for the ZED cameras.
-- **CUDA Errors**: Make sure that your GPU drivers and CUDA toolkit are properly installed if using CUDA.
-- **Model Not Found**: Verify that the YOLO model file is in the specified path (`models/yolo11l-seg.pt`).
+## **Troubleshooting**
+
+### **Common Issues and Solutions**:
+
+1. **Camera Initialization Error**:
+   - Ensure the correct serial numbers are provided for your ZED cameras in the code.
+
+2. **CUDA Errors**:
+   - Verify your GPU drivers and CUDA toolkit are properly installed.
+   - Ensure PyTorch is installed with CUDA support.
+
+3. **Model Not Found**:
+   - Ensure the YOLO model file is stored at the specified path (`models/yolo11x-seg.pt`).
