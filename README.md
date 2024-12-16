@@ -1,6 +1,6 @@
 # **Real-Time Vision Pipeline for 3D Object Detection, Segmentation, and Reconstruction**
 
-This repository implements a modular, real-time vision pipeline for object detection, segmentation, and 3D reconstruction using YOLO11 and a set of ZED Stereo Cameras. The project leverages GPU acceleration and advanced computer vision techniques to create a scalable solution for collaborative robotics, including tasks such as manipulation and obstacle avoidance, workspace analysis, and dynamic object tracking
+This repository implements a modular, real-time vision pipeline for object detection, segmentation, and 3D reconstruction using YOLO11 and a set of ZED Stereo Cameras. The project leverages GPU acceleration and advanced computer vision techniques to create a scalable solution for collaborative robotics, including tasks such as manipulation and obstacle avoidance, workspace analysis, and dynamic object tracking.
 ## **Table of Contents**
 
 1. [Features and Functionalities](#1-features-and-functionalities)
