@@ -97,7 +97,7 @@
     "RunOnceActivity.git.unshallow": "true",
     "Shell Script.run_calibration.sh.executor": "Run",
     "git-widget-placeholder": "main",
-    "last_opened_file_path": "/home/janfrischknecht/Documents/Semesterprojekt/RT-3D-Reconstruction/1cam/models",
+    "last_opened_file_path": "/home/janfrischknecht/Documents/Semesterprojekt/RT-3D-Reconstruction",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -109,8 +109,8 @@
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/1cam/models" />
       <recent name="$PROJECT_DIR$" />
+      <recent name="$PROJECT_DIR$/1cam/models" />
       <recent name="$PROJECT_DIR$/dept_sensing2" />
       <recent name="$PROJECT_DIR$/depth_sensing2" />
       <recent name="$PROJECT_DIR$/depth_sensing" />
@@ -291,7 +291,7 @@
       <workItem from="1732000905607" duration="23182000" />
       <workItem from="1732519348880" duration="2938000" />
       <workItem from="1732522298802" duration="53455000" />
-      <workItem from="1734334090252" duration="21786000" />
+      <workItem from="1734334090252" duration="22058000" />
     </task>
     <servers />
   </component>
