@@ -96,66 +96,47 @@ The `YOLOModel` class initializes the YOLO model for object detection and tracki
 - `conf`: Confidence threshold for detections.
 - `tracker`: Object tracker type (bytetrack or botsort).
 
-### Class Definitions
+### Important Functions
 
-#### `CameraManager`
+#### `retrieve_images_and_depths()`
 
-Manages the initialization, retrieval, and closing of ZED stereo cameras.
-- **Methods**:
-  - `retrieve_images_and_depths()`: Captures images and depth maps from both cameras.
-  - `close()`: Closes both camera connections.
+Captures images and depth maps from both cameras.
 
-#### `YOLOModel`
+#### `track()`
 
-Encapsulates the YOLO object detection and tracking functionality.
-- **Methods**:
-  - `track()`: Runs the YOLO model to detect and track objects in a given frame.
+Runs the YOLO model to detect and track objects in a given frame.
 
-#### `PointCloudProcessor`
+#### `erode_mask()`
 
-Handles point cloud operations, including mask erosion, point cloud generation, downsampling, outlier filtering, and point cloud fusion.
-- **Static Methods**:
-  - `erode_mask()`: Erodes the mask to reduce noise.
-  - `convert_mask_to_3d_points()`: Converts mask indices to 3D points using depth map values.
-  - `downsample_point_cloud()`: Downsamples a point cloud to reduce the number of points.
-  - `filter_outliers_sor()`: Filters outliers in the point cloud using statistical outlier removal.
-  - `fuse_point_clouds_centroid()`: Fuses point clouds from two cameras based on centroid distance.
+Erodes the mask to reduce noise.
 
-#### `MainApp`
+#### `convert_mask_to_3d_points()`
 
-Manages the main workflow of the application, coordinating camera retrieval, object detection, point cloud generation, and display.
-- **Methods**:
-  - `run()`: Main loop to retrieve images, detect objects, generate point clouds, process data, and display annotated frames.
-  - `_process_masks()`: Processes segmentation masks to generate and transform 3D points for each detected object.
-  - `_display_frames()`: Displays annotated frames with object detections and frame rate.
+Converts mask indices to 3D points using depth map values.
 
-### Sample Configuration in `main.py`
+#### `downsample_point_cloud()`
 
-```python
-model_path = "models/yolo11l-seg.pt"
-sn_cam1 = 33137761
-sn_cam2 = 36829049
+Downsamples a point cloud to reduce the number of points.
 
-# Color map and class names
-color_map = {
-    0: [15, 82, 186],
-    39: [255, 255, 0],
-    41: [63, 224, 208],
-    62: [255, 0, 255],
-    64: [0, 0, 128],
-    66: [255, 0, 0],
-    73: [0, 255, 0]
-}
-class_names = {
-    0: "Person",
-    39: "Bottle",
-    41: "Cup",
-    62: "Laptop",
-    64: "Mouse",
-    66: "Keyboard",
-    73: "Book"
-}
-```
+#### `filter_outliers_sor()`
+
+Filters outliers in the point cloud using statistical outlier removal.
+
+#### `fuse_point_clouds_centroid()`
+
+Fuses point clouds from two cameras based on centroid distance.
+
+#### `run()`
+
+Main loop to retrieve images, detect objects, generate point clouds, process data, and display annotated frames.
+
+#### `_process_masks()`
+
+Processes segmentation masks to generate and transform 3D points for each detected object.
+
+#### `_display_frames()`
+
+Displays annotated frames with object detections and frame rate.
 
 ### Transformations
 
