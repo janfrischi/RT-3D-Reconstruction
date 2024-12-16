@@ -1,6 +1,8 @@
 # **Real-Time Vision Pipeline for 3D Object Detection, Segmentation, and Reconstruction**
 
-This project implements a modular, real-time vision pipeline for object detection, segmentation, and 3D reconstruction using **YOLOv11** and a set **ZED Stereo Cameras**. The project leverages GPU acceleration and advanced computer vision techniques to create a scalable solution for collaborative robotics, workspace analysis, and dynamic object tracking.
+This repository implements a modular, real-time vision pipeline for object detection, segmentation, and 3D reconstruction using **YOLOv11** and **ZED Stereo Cameras**. The project leverages GPU acceleration and advanced computer vision techniques to create a scalable solution for collaborative robotics, workspace analysis, and dynamic object tracking.
+
+---
 
 ## **Table of Contents**
 
@@ -16,12 +18,14 @@ This project implements a modular, real-time vision pipeline for object detectio
    - [Installation](#installation)
 3. [Usage](#usage)
    - [Running the Pipeline](#running-the-pipeline)
+   - [Available Scripts](#available-scripts)
 4. [Performance Benchmarking](#performance-benchmarking)
 5. [Core Functions](#core-functions)
 6. [Notes](#notes)
 7. [Troubleshooting](#troubleshooting)
    - [Common Issues and Solutions](#common-issues-and-solutions)
 
+---
 
 ## **Features and Functionalities**
 
@@ -53,6 +57,8 @@ This project implements a modular, real-time vision pipeline for object detectio
 ### **6. Performance Monitoring**
 - Logs real-time FPS and timing metrics (e.g., frame retrieval, YOLO inference, point cloud processing) to CSV files for benchmarking.
 
+---
+
 ## **Getting Started**
 
 ### **Prerequisites**
@@ -63,15 +69,18 @@ This project implements a modular, real-time vision pipeline for object detectio
 2. **Software**:
    - Python >= 3.8
    - CUDA-enabled GPU drivers.
+   - **ZED SDK and Python API**:
+     - Install the [ZED SDK](https://www.stereolabs.com/zed-sdk/) and its Python API, which are required for camera access and depth map generation.
+     - Detailed installation instructions can be found on the [Stereolabs documentation page](https://www.stereolabs.com/docs/).
 
 ### **Installation**
 1. Clone the repository:
    ```bash
-   git clone https://github.com/janfrischi/RT-3D-Reconstruction.git
+   git clone https://github.com/username/vision-pipeline.git
    cd vision-pipeline
    ```
 
-2. Install required dependencies from `requirements.txt` file using pip:
+2. Install required dependencies from the `requirements.txt` file:
    ```bash
    pip install -r requirements.txt
    ```
@@ -82,7 +91,15 @@ This project implements a modular, real-time vision pipeline for object detectio
 
 4. Connect ZED cameras and set up the environment.
 
+---
+
 ## **Usage**
+
+### **Running the Pipeline**
+Run the main script to start the real-time pipeline:
+```bash
+python main.py
+```
 
 ### **Available Scripts**
 This repository provides multiple scripts tailored to specific hardware configurations and use cases:
@@ -99,6 +116,8 @@ This repository provides multiple scripts tailored to specific hardware configur
    - Optimized for GPU-based mask processing, leveraging CUDA for enhanced performance.
    - Recommended for real-time applications where high-speed processing is required.
 
+---
+
 ## **Performance Benchmarking**
 
 The pipeline tracks the following metrics for each frame:
@@ -110,6 +129,8 @@ The pipeline tracks the following metrics for each frame:
 
 All timings are logged in `timings.csv` for analysis.
 
+---
+
 ## **Core Functions**
 
 1. **`convert_mask_to_3d_points()`**: Converts 2D segmentation masks into 3D coordinates using depth maps.
@@ -120,11 +141,13 @@ All timings are logged in `timings.csv` for analysis.
 
 For a detailed description of functions, see the **[Core Functions](#core-functions)** section.
 
+---
 
 ## **Notes**
 - The code is designed to run in real-time, with optimizations for using CUDA if available.
 - The application runs in a loop until the `q` key is pressed.
 
+---
 
 ## **Troubleshooting**
 
@@ -139,3 +162,7 @@ For a detailed description of functions, see the **[Core Functions](#core-functi
 
 3. **Model Not Found**:
    - Ensure the YOLO model file is stored at the specified path (`models/yolo11x-seg.pt`).
+
+---
+
+This update ensures the inclusion of the **ZED SDK** as a prerequisite, with a direct link to the relevant documentation for user guidance. Let me know if you need any more changes!
