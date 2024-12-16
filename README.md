@@ -25,17 +25,17 @@ This repository implements a modular, real-time vision pipeline for object detec
 
 ## **1. Features and Functionalities**
 
-### **Real-Time Object Detection, Segmentation, and Tracking**
+### **Real-Time Object Detection, Segmentation, and Tracking:**
 - Utilizes **YOLO11** for detecting and segmenting objects of interest (e.g., bottles, cups, laptops) in frames from stereo cameras.
 - Tracks objects and their IDs across frames to ensure consistency. The pipeline supports two tracking algorithms:
   - **ByteTrack**: A lightweight, real-time object tracker that employs a simple yet effective online and real-time tracking algorithm.
   - **DeepSORT**: A deep learning-based object tracker that combines appearance features and motion information for robust tracking.
 
-### **3D Reconstruction from Depth Maps**
+### **3D Reconstruction from Depth Maps:**
 - Converts 2D segmentation masks into 3D point clouds using ZED stereo camera depth maps and camera intrinsics.
 - Improves accuracy and efficiency through depth-to-3D mapping.
 
-### **Advanced Point Cloud Processing**
+### **Advanced Point Cloud Processing:**
 - **Down sampling**: Reduces point cloud density using voxel grid filtering.
 - **Outlier Removal**: Removes statistical outliers to enhance point cloud quality.
 - **Cropping**: Crops point clouds to specific regions of interest.
@@ -43,19 +43,19 @@ This repository implements a modular, real-time vision pipeline for object detec
 - **Fusion**: Combines point clouds from multiple cameras based on centroid distances to create a unified 3D representation.
 - **Subtraction**: Removes the reconstructed object point cloud from the workspace.
 
-### **Interactive Visualization**
+### **Interactive Visualization:**
 - Displays annotated video frames with bounding boxes, segmentation masks, and object labels.
 - Visualizes 3D point clouds of detected objects and the workspace using Open3D.
 - Displays real-time frame rate (FPS) for performance monitoring.
 
-### **Modular and Extensible Design**
+### **Modular and Extensible Design:**
 - Organized into reusable components for:
   - Camera management
   - Object detection and segmentation
   - Point cloud generation and fusion
 - Easily extendable for future functionalities.
 
-### **Performance Monitoring**
+### **Performance Monitoring:**
 - Logs real-time FPS and timing metrics for each pipeline stage.
 - Enables performance analysis and optimization for specific setups.
 
@@ -157,4 +157,4 @@ All timings are logged in `timings.csv` and `fps_log.csv` for analysis.
    - Ensure PyTorch is installed with CUDA support.
 
 **Model Not Found**:
-   - Ensure PyTorch is installed with CUDA support. You can find installation instructions on the PyTorch website.
+   - Ensure PyTorch is installed with CUDA support. You can find installation instructions on the [PyTorch website](https://pytorch.org/).
