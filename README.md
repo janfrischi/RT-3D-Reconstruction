@@ -18,7 +18,7 @@ This repository implements a modular, real-time vision pipeline for object detec
    - [Running the Pipeline](#running-the-pipeline)
    - [Available Scripts](#available-scripts)
 4. [Performance Benchmarking](#performance-benchmarking)
-5. [Core Functions](#core-functions)
+5. [Main Functions](#main-functions)
 6. [Notes](#notes)
 7. [Troubleshooting](#troubleshooting)
    - [Common Issues and Solutions](#common-issues-and-solutions)
@@ -58,6 +58,7 @@ This repository implements a modular, real-time vision pipeline for object detec
 ### **6. Performance Monitoring**
 - Logs real-time FPS and timing metrics for each pipeline stage.
 - Enables performance analysis and optimization for specific setups.
+
 ## **Getting Started**
 
 ### **Prerequisites**
@@ -85,8 +86,9 @@ This repository implements a modular, real-time vision pipeline for object detec
    ```
 
 3. Download the YOLOv11 model:
-   - Ensure the YOLOv11 model (`yolo11x-seg.pt`) is stored in the `models/` directory.
+   - Ensure the YOLOv11 model `yolo11x-seg.pt` or any other size is stored in the `models/` directory.
    - You can download it from the [Ultralytics repository](https://github.com/ultralytics).
+   - Another option is to simply use `model = YOLO("models/yolo11x-seg.pt").to(device)` in the code to download the model automatically.
 
 4. Connect ZED cameras and set up the environment.
    - Ensure the ZED cameras are connected and recognized by the system. Use USB 3.0 10GB/s ports for optimal performance.
@@ -98,22 +100,22 @@ This repository implements a modular, real-time vision pipeline for object detec
 ### **Available Scripts**
 This repository provides multiple scripts tailored to specific hardware configurations and use cases:
 
-1. **`2cams.py`**:
+**`2cams.py`**:
    - Runs the vision pipeline with two ZED cameras.
    - Streamlined version that imports all necessary functions from the vision_pipeline_utils.py file. This script is preconfigured with default parameters, such as voxel_size=0.005, making it ready to use out of the box.
 
-2. **`2cams_mask_cpu.py`**:
+**`2cams_mask_cpu.py`**:
    - Optimized for running the vision pipeline with CPU-based mask processing.
    - Ideal when GPU resources are limited.
 
-3. **`2cams_mask_gpu.py`**:
+**`2cams_mask_gpu.py`**:
    - Optimized for GPU-based mask processing, leveraging CUDA for enhanced performance.
    - Recommended for real-time applications where high-speed processing is required.
 
-4. **`visualizer_fps.py`**: 
+**`visualizer_fps.py`**: 
    - Uses the fps_log.csv file to visualize the frame rate over time.
 
-5. **`visualizer_performance.py`**:
+**`visualizer_performance.py`**:
    - Uses the timings.csv file to visualize the performance metrics over time.r3oy
 
 ## **Performance Benchmarking**
@@ -125,27 +127,22 @@ The pipeline tracks the following metrics for each frame:
 - **Point Cloud Processing Time**: Time to process and fuse point clouds.
 - **Overall Loop Time**: Total time per frame.
 
-All timings are logged in `timings.csv` for analysis.
+All timings are logged in `timings.csv` and `fps_log.csv` for analysis.
 
----
+## **Main Functions**
+- **`convert_mask_to_3d_points()`**: Converts 2D segmentation masks into 3D coordinates using depth maps.
+- **`perform_yolo_inference()`**: Performs object detection and segmentation and object tracking using YOLO11.
+- **`downsample_point_cloud_gpu()`**: Down samples point clouds using voxel grid filtering on the GPU.
+- **`crop_point_cloud_gpu()`**: Crops the transformed point cloud to a specific region of interest.
+- **`fuse_point_clouds_centroid()`**: Fuses point clouds from two cameras based on centroid distance.
+- **`process_point_clouds()`**: Processes point clouds by down sampling, cropping, and transforming them.
+- **`subtract_point_clouds_gpu()`**: Subtracts object point clouds from the workspace.
 
-## **Core Functions**
-
-1. **`convert_mask_to_3d_points()`**: Converts 2D segmentation masks into 3D coordinates using depth maps.
-2. **`downsample_point_cloud_gpu()`**: Downsamples point clouds using voxel grid filtering on the GPU.
-3. **`crop_point_cloud_gpu()`**: Crops point clouds to specified boundaries.
-4. **`fuse_point_clouds_centroid()`**: Fuses point clouds from two cameras based on centroid distance.
-5. **`subtract_point_clouds_gpu()`**: Subtracts object point clouds from the workspace.
-
-For a detailed description of functions, see the **[Core Functions](#core-functions)** section.
-
----
 
 ## **Notes**
-- The code is designed to run in real-time, with optimizations for using CUDA if available.
+- The vision pipeline is optimized for real-time performance, leveraging CUDA acceleration when available to ensure efficient processing of object detection, segmentation, and 3D reconstruction tasks.
 - The application runs in a loop until the `q` key is pressed.
-
----
+- The `1cam directory` contains tracking solutions specifically designed for single-camera setups, enabling object detection, segmentation, and tracking with just one ZED camera.
 
 ## **Troubleshooting**
 
@@ -153,10 +150,11 @@ For a detailed description of functions, see the **[Core Functions](#core-functi
 
 1. **Camera Initialization Error**:
    - Ensure the correct serial numbers are provided for your ZED cameras in the code.
+   - Verify the ZED SDK and Python API are correctly installed.
 
 2. **CUDA Errors**:
    - Verify your GPU drivers and CUDA toolkit are properly installed.
    - Ensure PyTorch is installed with CUDA support.
 
 3. **Model Not Found**:
-   - Ensure the YOLO model file is stored at the specified path (`models/yolo11x-seg.pt`).
+   - Ensure PyTorch is installed with CUDA support. You can find installation instructions on the PyTorch website.
