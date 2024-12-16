@@ -23,19 +23,19 @@ This repository implements a modular, real-time vision pipeline for object detec
 7. [Troubleshooting](#troubleshooting)
    - [Common Issues and Solutions](#common-issues-and-solutions)
 
-## **Features and Functionalities**
+## **1. Features and Functionalities**
 
-### **1. Real-Time Object Detection, Segmentation, and Tracking**
+### **Real-Time Object Detection, Segmentation, and Tracking**
 - Utilizes **YOLO11** for detecting and segmenting objects of interest (e.g., bottles, cups, laptops) in frames from stereo cameras.
 - Tracks objects and their IDs across frames to ensure consistency. The pipeline supports two tracking algorithms:
   - **ByteTrack**: A lightweight, real-time object tracker that employs a simple yet effective online and real-time tracking algorithm.
   - **DeepSORT**: A deep learning-based object tracker that combines appearance features and motion information for robust tracking.
 
-### **2. 3D Reconstruction from Depth Maps**
+### **3D Reconstruction from Depth Maps**
 - Converts 2D segmentation masks into 3D point clouds using ZED stereo camera depth maps and camera intrinsics.
 - Improves accuracy and efficiency through depth-to-3D mapping.
 
-### **3. Advanced Point Cloud Processing**
+### **Advanced Point Cloud Processing**
 - **Down sampling**: Reduces point cloud density using voxel grid filtering.
 - **Outlier Removal**: Removes statistical outliers to enhance point cloud quality.
 - **Cropping**: Crops point clouds to specific regions of interest.
@@ -43,23 +43,23 @@ This repository implements a modular, real-time vision pipeline for object detec
 - **Fusion**: Combines point clouds from multiple cameras based on centroid distances to create a unified 3D representation.
 - **Subtraction**: Removes the reconstructed object point cloud from the workspace.
 
-### **4. Interactive Visualization**
+### **Interactive Visualization**
 - Displays annotated video frames with bounding boxes, segmentation masks, and object labels.
 - Visualizes 3D point clouds of detected objects and the workspace using Open3D.
 - Displays real-time frame rate (FPS) for performance monitoring.
 
-### **5. Modular and Extensible Design**
+### **Modular and Extensible Design**
 - Organized into reusable components for:
   - Camera management
   - Object detection and segmentation
   - Point cloud generation and fusion
 - Easily extendable for future functionalities.
 
-### **6. Performance Monitoring**
+### **Performance Monitoring**
 - Logs real-time FPS and timing metrics for each pipeline stage.
 - Enables performance analysis and optimization for specific setups.
 
-## **Getting Started**
+## **2. Getting Started**
 
 ### **Prerequisites**
 1. **Hardware**:
@@ -95,7 +95,7 @@ This repository implements a modular, real-time vision pipeline for object detec
    - Set up the ZED SDK and Python API for camera access.
    - Make sure the camera serial numbers are correctly set in the code.
 
-## **Usage**
+## **3. Usage**
 
 ### **Available Scripts**
 This repository provides multiple scripts tailored to specific hardware configurations and use cases:
@@ -118,7 +118,7 @@ This repository provides multiple scripts tailored to specific hardware configur
 **`visualizer_performance.py`**:
    - Uses the timings.csv file to visualize the performance metrics over time.r3oy
 
-## **Performance Benchmarking**
+## **4. Performance Benchmarking**
 
 The pipeline tracks the following metrics for each frame:
 - **Frame Retrieval Time**: Time taken to retrieve frames from cameras.
@@ -129,7 +129,7 @@ The pipeline tracks the following metrics for each frame:
 
 All timings are logged in `timings.csv` and `fps_log.csv` for analysis.
 
-## **Main Functions**
+## **5. Main Functions**
 - **`convert_mask_to_3d_points()`**: Converts 2D segmentation masks into 3D coordinates using depth maps.
 - **`perform_yolo_inference()`**: Performs object detection and segmentation and object tracking using YOLO11.
 - **`downsample_point_cloud_gpu()`**: Down samples point clouds using voxel grid filtering on the GPU.
@@ -139,22 +139,22 @@ All timings are logged in `timings.csv` and `fps_log.csv` for analysis.
 - **`subtract_point_clouds_gpu()`**: Subtracts object point clouds from the workspace.
 
 
-## **Notes**
+## **6. Notes**
 - The vision pipeline is optimized for real-time performance, leveraging CUDA acceleration when available to ensure efficient processing of object detection, segmentation, and 3D reconstruction tasks.
 - The application runs in a loop until the `q` key is pressed.
 - The `1cam directory` contains tracking solutions specifically designed for single-camera setups, enabling object detection, segmentation, and tracking with just one ZED camera.
 
-## **Troubleshooting**
+## **7. Troubleshooting**
 
 ### **Common Issues and Solutions**:
 
-1. **Camera Initialization Error**:
+**Camera Initialization Error**:
    - Ensure the correct serial numbers are provided for your ZED cameras in the code.
    - Verify the ZED SDK and Python API are correctly installed.
 
-2. **CUDA Errors**:
+**CUDA Errors**:
    - Verify your GPU drivers and CUDA toolkit are properly installed.
    - Ensure PyTorch is installed with CUDA support.
 
-3. **Model Not Found**:
+**Model Not Found**:
    - Ensure PyTorch is installed with CUDA support. You can find installation instructions on the PyTorch website.
