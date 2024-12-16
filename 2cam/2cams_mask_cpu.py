@@ -323,7 +323,7 @@ def main():
         writer.writerow(["Timestamp", "FPS"])
 
     # Load the pre-trained YOLOv11 model and move it to the device
-    model = YOLO("yolo11l-seg.pt").to(device)
+    model = YOLO("models/yolo11x-seg.pt").to(device)
 
     # Initialize the ZED camera objects
     zed1 = sl.Camera()

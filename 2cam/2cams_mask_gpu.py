@@ -3,10 +3,9 @@ import pyzed.sl as sl
 import cv2
 import time
 import torch
-import torch.nn.functional as F
-import open3d as o3d
 import csv
 from ultralytics import YOLO
+from vision_pipeline_utils import convert_mask_to_3d_points, downsample_point_cloud_gpu, crop_point_cloud_gpu, fuse_point_clouds_centroid, subtract_point_clouds_gpu
 
 # Define a color map for different classes
 color_map = {
@@ -41,228 +40,6 @@ timings = {
     "Total Time per Iteration": []
 }
 
-def erode_mask_gpu(mask, kernel_size=3):
-    kernel = torch.ones((1, 1, kernel_size, kernel_size), device=mask.device)
-    eroded_mask = F.conv2d(mask.unsqueeze(0).unsqueeze(0).float(), kernel, padding=kernel_size // 2)
-    return (eroded_mask.squeeze() > 0).float()
-
-
-# Convert 2D mask pixel coordinates to 3D points using depth values on GPU
-def convert_mask_to_3d_points(mask_indices, depth_map, cx, cy, fx, fy):
-    # Extract the u, v coordinates from the mask indices
-    u_coords = mask_indices[:, 1]
-    v_coords = mask_indices[:, 0]
-    # Extract the necessary depth values from the depth map
-    depth_values = depth_map[v_coords, u_coords]
-    # Create a mask to filter out invalid depth values
-    valid_mask = (depth_values > 0) & ~torch.isnan(depth_values) & ~torch.isinf(depth_values)
-    # Filter out invalid depth values
-    u_coords = u_coords[valid_mask]
-    v_coords = v_coords[valid_mask]
-    depth_values = depth_values[valid_mask]
-    # Calculate the 3D coordinates using the camera intrinsics
-    x_coords = (u_coords - cx) * depth_values / fx
-    y_coords = (v_coords - cy) * depth_values / fy
-    z_coords = depth_values
-    # Return a tensor of shape (N, 3) containing the 3D coordinates
-    return torch.stack((x_coords, y_coords, z_coords), dim=-1)
-
-
-# Perform down sampling directly on the GPU
-def downsample_point_cloud_gpu(point_cloud, voxel_size):
-    # Round the point cloud to the nearest voxel grid -> all points in the same voxel will have the same coordinates
-    rounded = torch.round(point_cloud / voxel_size) * voxel_size
-    downsampled_points = torch.unique(rounded, dim=0)
-    return downsampled_points
-
-
-# Filter out the outliers in the point cloud using the Statistical Outlier Removal filter
-def filter_outliers_sor(point_cloud, nb_neighbors=20, std_ratio=1.5):
-    # Convert the numpy array to an Open3D point cloud
-    pcd = o3d.geometry.PointCloud()
-    pcd.points = o3d.utility.Vector3dVector(point_cloud)
-
-    # Apply statistical outlier removal
-    filtered_pcd, ind = pcd.remove_statistical_outlier(nb_neighbors=nb_neighbors, std_ratio=std_ratio)
-
-    # Convert back to numpy array
-    filtered_points = np.asarray(filtered_pcd.points)
-    return filtered_points
-
-def filter_outliers_sor_gpu(point_cloud, nb_neighbors=20, std_ratio=1.5):
-    """
-    Perform statistical outlier removal on a point cloud using GPU.
-
-    Args:
-        point_cloud (torch.Tensor): Input point cloud of shape (N, 3), on GPU.
-        nb_neighbors (int): Number of neighbors to consider for each point.
-        std_ratio (float): Standard deviation ratio for determining outliers.
-
-    Returns:
-        torch.Tensor: Filtered point cloud of shape (M, 3), on GPU.
-    """
-    num_points = point_cloud.shape[0]
-
-    # If the point cloud is too small, return it as-is
-    if num_points <= 1:
-        print("Point cloud too small for outlier removal. Skipping...")
-        return point_cloud
-
-    # Ensure nb_neighbors does not exceed the number of points
-    actual_neighbors = min(nb_neighbors, num_points - 1)
-
-    # Compute pairwise distances
-    distances = torch.cdist(point_cloud, point_cloud)
-
-    # Sort distances to find nearest neighbors (excluding self)
-    knn_distances, _ = torch.topk(distances, k=actual_neighbors + 1, largest=False, dim=1)
-    knn_distances = knn_distances[:, 1:]  # Exclude self-distance (always 0)
-
-    # Compute mean and standard deviation of distances
-    mean_distances = knn_distances.mean(dim=1)
-    std_distances = knn_distances.std(dim=1)
-
-    # Determine the threshold for outlier removal
-    threshold = mean_distances + std_ratio * std_distances
-
-    # Filter points whose mean distance exceeds the threshold
-    mask = mean_distances <= threshold
-    filtered_points = point_cloud[mask]
-
-    # Print the memory allocated for the distances tensor
-    print(f"Memory allocated for distances: {distances.element_size() * distances.nelement() / 1024 / 1024:.2f} MB")
-
-    return filtered_points
-
-
-# Returns true if the two point clouds are equal
-def point_clouds_equal(pc1, pc2):
-    return np.array_equal(pc1, pc2)
-
-
-# Helper function to visualize a point cloud
-def visualize_point_cloud(point_cloud, title="Point Cloud"):
-    # Create an Open3D PointCloud object and visualize
-    pcd = o3d.geometry.PointCloud()
-    pcd.points = o3d.utility.Vector3dVector(point_cloud)
-    o3d.visualization.draw_geometries([pcd], window_name=title)
-
-
-def calculate_centroid(point_cloud):
-    return np.mean(point_cloud, axis=0)
-
-
-def crop_point_cloud_gpu(point_cloud, x_bounds, y_bounds, z_bounds):
-    mask = (
-        (point_cloud[:, 0] >= x_bounds[0]) & (point_cloud[:, 0] <= x_bounds[1]) &
-        (point_cloud[:, 1] >= y_bounds[0]) & (point_cloud[:, 1] <= y_bounds[1]) &
-        (point_cloud[:, 2] >= z_bounds[0]) & (point_cloud[:, 2] <= z_bounds[1])
-    )
-    return point_cloud[mask]
-
-
-# Function to fuse the point clouds based on centroid distance
-def fuse_point_clouds_centroid(point_clouds_camera1, point_clouds_camera2, distance_threshold=0.1):
-    # Group the point clouds by the class ID
-    # The class dicts are of the form: {class_id1: [point_cloud1, point_cloud2, ...], class_id2: [point_cloud1, point_cloud2, ...]}
-    pcs1 = []
-    pcs2 = []
-    class_dict1 = {}
-    class_dict2 = {}
-
-    # Iterate over the point clouds from camera 1 and group them by class ID
-    # point_clouds_camera1 = [(pc, class_id), ...] is a list of tuples containing the point cloud and the class ID
-    for pc, class_id in point_clouds_camera1:
-        if class_id not in class_dict1:
-            class_dict1[class_id] = [] # To store the point clouds for the class ID
-        class_dict1[class_id].append(pc) # Append the point cloud to the list for the class ID
-
-    # Iterate over the point clouds from camera 2 and group them by class ID
-    for pc, class_id in point_clouds_camera2:
-        if class_id not in class_dict2:
-            class_dict2[class_id] = []
-        class_dict2[class_id].append(pc)
-
-    # After this loop, class_dict1 and class_dict2 contain the point clouds grouped by class ID
-
-    # Initialize the fused point cloud list
-    fused_point_clouds = []
-
-    # Process each class ID
-    # Get all the unique class IDs from both cameras
-    # class_dict1.keys() returns a set of all the keys "class IDs" in the dictionary
-    for class_id in set(class_dict1.keys()).union(class_dict2.keys()):
-        # Get the point clouds for the current class ID from both cameras
-        pcs1 = class_dict1.get(class_id, []) # pcs1 has the following format: [point_cloud1, point_cloud2, ...]
-        pcs2 = class_dict2.get(class_id, [])
-
-        # If there is only one point cloud with the same class ID from each camera we can directly fuse the pcs
-        if len(pcs1) == 1 and len(pcs2) == 1:
-            # Concatenate the point clouds along the vertical axis
-            fused_pc = filter_outliers_sor(np.vstack((pcs1[0], pcs2[0])))
-            fused_point_clouds.append((fused_pc, class_id))
-
-        # If there are multiple point clouds with the same class ID from each camera, we need to find the best match
-        else:
-            for pc1 in pcs1:
-                pc1 = filter_outliers_sor(pc1)
-                best_distance = float('inf')
-                best_match = None
-
-                # Calculate the centroid of the point cloud from camera 1
-                centroid1 = calculate_centroid(pc1)
-
-                # Loop over all the point clouds from camera 2 with the same ID and find the best match based on centroid distance
-                for pc2 in pcs2:
-                    centroid2 = calculate_centroid(pc2)
-                    # Calculate the Euclidean distance / L2 norm between the centroids
-                    distance = np.linalg.norm(centroid1 - centroid2)
-
-                    if distance < best_distance and distance < distance_threshold:
-                        best_distance = distance
-                        best_match = pc2
-                        best_match = filter_outliers_sor(best_match)
-
-                # If a match was found, fuse the point clouds
-                if best_match is not None:
-                    # Concatenate the point clouds along the vertical axis and filter out the outliers
-                    fused_pc = np.vstack((pc1, best_match))
-                    fused_point_clouds.append((fused_pc, class_id))
-                    # Remove the matched point cloud from the list of point clouds from camera 2 to prevent duplicate fusion
-                    pcs2 = [pc for pc in pcs2 if not point_clouds_equal(pc, best_match)]
-
-                # If no match was found, simply add the point cloud from camera 1 to the fused point clouds
-                else:
-                    fused_point_clouds.append((pc1, class_id))
-
-            # If any point clouds remain in the list from camera 2, add them to the fused point clouds
-            for pc2 in pcs2:
-                fused_point_clouds.append((pc2, class_id))
-
-    return pcs1, pcs2, fused_point_clouds
-
-
-def subtract_point_clouds_gpu(workspace_pc, objects_pc, distance_threshold=0.005):
-    # Convert point clouds to PyTorch tensors and ensure consistent dtype
-    workspace_tensor = torch.tensor(workspace_pc, dtype=torch.float32, device='cuda')
-    objects_tensor = torch.tensor(objects_pc, dtype=torch.float32, device='cuda')
-
-    # Compute pairwise distances, torch.cdist computes the pairwise Euclidean distances between two tensors
-    # distances[i,j] contains the ith point in workspace_tensor and the jth point in objects_tensor
-    distances = torch.cdist(workspace_tensor, objects_tensor)
-
-    print(f"Memory allocated for distances: {distances.element_size() * distances.nelement() / 1024 / 1024:.2f} MB")
-
-    # Find points in the workspace tensor that are farther than the threshold from all points in the objects tensor
-    min_distances, _ = distances.min(dim=1)
-    # If min_distances[i] > distance_threshold, the ith point is retained
-    mask = min_distances > distance_threshold
-
-    # Filter the workspace points based on the mask
-    filtered_points = workspace_tensor[mask].cpu().numpy()
-
-    return filtered_points
-
 
 def main():
 
@@ -271,7 +48,7 @@ def main():
     print(f"Using device: {device}")
 
     # Load the pre-trained YOLOv11 model and move it to the device
-    model = YOLO("yolo11x-seg.pt").to(device)
+    model = YOLO("models/yolo11x-seg.pt").to(device)
 
     # Initialize the CSV file to store the results
     fps_log_file = "fps_log.csv"
@@ -471,8 +248,8 @@ def main():
             )
 
             # Downsample the point clouds
-            point_cloud1_workspace = downsample_point_cloud_gpu(point_cloud1_workspace_np_cropped, voxel_size=0.01)
-            point_cloud2_workspace = downsample_point_cloud_gpu(point_cloud2_workspace_np_cropped, voxel_size=0.01)
+            point_cloud1_workspace = downsample_point_cloud_gpu(point_cloud1_workspace_np_cropped, voxel_size=0.005)
+            point_cloud2_workspace = downsample_point_cloud_gpu(point_cloud2_workspace_np_cropped, voxel_size=0.005)
             fused_point_cloud_ws = torch.cat((point_cloud1_workspace, point_cloud2_workspace), dim=0)
 
             # SOR filter the fused point cloud
@@ -552,7 +329,7 @@ def main():
                                                                 rotation_robot_cam1_torch.T) + origin_cam1_torch
 
                         # Downsample the point cloud of camera 1 on the GPU
-                        point_cloud_cam1_downsampled = downsample_point_cloud_gpu(point_cloud_cam1_transformed,voxel_size=0.01)
+                        point_cloud_cam1_downsampled = downsample_point_cloud_gpu(point_cloud_cam1_transformed,voxel_size=0.005)
 
                         # Move transformed points to CPU for further processing
                         point_cloud_cam1_downsampled_cpu = point_cloud_cam1_downsampled.cpu().numpy()
@@ -585,7 +362,7 @@ def main():
 
                         # Downsample the point cloud of camera 2 on the GPU
                         point_cloud_cam2_downsampled = downsample_point_cloud_gpu(point_cloud_cam2_transformed,
-                                                                                  voxel_size=0.01)
+                                                                                  voxel_size=0.005)
                         # Move transformed points to CPU for further processing
                         point_cloud_cam2_downsampled_cpu = point_cloud_cam2_downsampled.cpu().numpy()
 

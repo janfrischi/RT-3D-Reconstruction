@@ -5,8 +5,7 @@ import cv2
 import time
 import torch
 import open3d as o3d
-import open3d.core as o3c
-
+import csv
 from ultralytics import YOLO
 
 class CameraManager:
@@ -49,8 +48,8 @@ class CameraManager:
         image1, depth1 = sl.Mat(), sl.Mat()
         image2, depth2 = sl.Mat(), sl.Mat()
         if self.zed1.grab() == sl.ERROR_CODE.SUCCESS and self.zed2.grab() == sl.ERROR_CODE.SUCCESS:
-            self.zed1.retrieve_image(image1, sl.VIEW.LEFT)
-            self.zed2.retrieve_image(image2, sl.VIEW.LEFT)
+            self.zed1.retrieve_image(image1, view=sl.VIEW.LEFT)
+            self.zed2.retrieve_image(image2, view=sl.VIEW.LEFT)
             self.zed1.retrieve_measure(depth1, sl.MEASURE.DEPTH)
             self.zed2.retrieve_measure(depth2, sl.MEASURE.DEPTH)
             return image1, depth1, image2, depth2

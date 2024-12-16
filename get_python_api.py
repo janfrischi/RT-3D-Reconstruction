@@ -25,6 +25,9 @@ base_URL = "https://download.stereolabs.com/zedsdk/"
 
 def pip_install(package, force_install=False, ignore_install=False, upgrade=False):
     try:
+        # Set the environment variable
+        os.environ['PIP_BREAK_SYSTEM_PACKAGES'] = '1'
+
         call_list = [sys.executable, "-m", "pip", "install"]
         if ignore_install:
             call_list.append("--ignore-installed")
