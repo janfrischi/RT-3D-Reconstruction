@@ -4,12 +4,12 @@ This repository implements a modular, real-time vision pipeline for object detec
 <p align="center">
   <img src="average_timing_per_step_1obj.png" alt="Figure 1" width="60%">
 </p>
-<p align="center"><strong>Figure 1: Average Timing Per Step for 1 Object Voxelsize = 5mm</strong></p>
+<p align="center"><strong>Figure 1: Average Timing Per Step for 1 Object voxel size = 5mm</strong></p>
 
 <p align="center">
   <img src="fps_over_time_smoothed_30s_1obj.png" alt="Figure 2" width="60%">
 </p>
-<p align="center"><strong>Figure 2: FPS Over Time for 1 Object Voxelsize = 5mm</strong></p>
+<p align="center"><strong>Figure 2: FPS Over Time for 1 Object voxel size = 5mm</strong></p>
 
 
 ## **Table of Contents**
